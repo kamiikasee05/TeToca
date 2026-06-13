@@ -93,39 +93,39 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FND-01 | Phase 0 | Pending |
-| FND-02 | Phase 0 | Pending |
-| FND-03 | Phase 0 | Pending |
-| FND-04 | Phase 0 | Pending |
-| FND-05 | Phase 0 | Pending |
-| FND-06 | Phase 0 | Pending |
-| FND-07 | Phase 0 | Pending |
-| LAND-01 | Phase 1 | Pending |
-| LAND-02 | Phase 1 | Pending |
-| LAND-03 | Phase 1 | Pending |
-| LAND-04 | Phase 1 | Pending |
-| LAND-05 | Phase 1 | Pending |
-| LAND-06 | Phase 1 | Pending |
-| LAND-07 | Phase 1 | Pending |
-| CONF-01 | Phase 2 | Pending |
-| CONF-02 | Phase 2 | Pending |
-| CONF-03 | Phase 2 | Pending |
-| CONF-04 | Phase 2 | Pending |
-| CONF-05 | Phase 2 | Pending |
-| CONF-06 | Phase 2 | Pending |
-| CONF-07 | Phase 2 | Pending |
-| WHAT-01 | Phase 3 | Pending |
-| WHAT-02 | Phase 3 | Pending |
-| WHAT-03 | Phase 3 | Pending |
-| WHAT-04 | Phase 3 | Pending |
-| WHAT-05 | Phase 3 | Pending |
-| WHAT-06 | Phase 3 | Pending |
-| WHAT-07 | Phase 3 | Pending |
-| NEGO-01 | Phase 4 | Pending |
-| NEGO-02 | Phase 4 | Pending |
-| NEGO-03 | Phase 4 | Pending |
-| NEGO-04 | Phase 4 | Pending |
-| NEGO-05 | Phase 4 | Pending |
+| FND-01 | Phase 1 | Pending |
+| FND-02 | Phase 1 | Pending |
+| FND-03 | Phase 1 | Pending |
+| FND-04 | Phase 1 | Pending |
+| FND-05 | Phase 1 | Pending |
+| FND-06 | Phase 1 | Pending |
+| FND-07 | Phase 1 | Pending |
+| LAND-01 | Phase 2 | Pending |
+| LAND-02 | Phase 2 | Pending |
+| LAND-03 | Phase 2 | Pending |
+| LAND-04 | Phase 2 | Pending |
+| LAND-05 | Phase 2 | Pending |
+| LAND-06 | Phase 2 | Pending |
+| LAND-07 | Phase 2 | Pending |
+| CONF-01 | Phase 3 | Pending |
+| CONF-02 | Phase 3 | Pending |
+| CONF-03 | Phase 3 | Pending |
+| CONF-04 | Phase 3 | Pending |
+| CONF-05 | Phase 3 | Pending |
+| CONF-06 | Phase 3 | Pending |
+| CONF-07 | Phase 3 | Pending |
+| WHAT-01 | Phase 4 | Pending |
+| WHAT-02 | Phase 4 | Pending |
+| WHAT-03 | Phase 4 | Pending |
+| WHAT-04 | Phase 4 | Pending |
+| WHAT-05 | Phase 4 | Pending |
+| WHAT-06 | Phase 4 | Pending |
+| WHAT-07 | Phase 4 | Pending |
+| NEGO-01 | Phase 5 | Pending |
+| NEGO-02 | Phase 5 | Pending |
+| NEGO-03 | Phase 5 | Pending |
+| NEGO-04 | Phase 5 | Pending |
+| NEGO-05 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 33 total
