@@ -69,7 +69,7 @@ docker compose $COMPOSE_ARGS logs --tail=30
 echo ""
 echo "============================================"
 echo "  Deploy finished successfully."
-echo "  Public  → http://0.0.0.0:8080"
+echo "  Public  → http://0.0.0.0:80"
 echo "  Admin   → http://127.0.0.1:8081  (localhost only)"
 echo "  n8n     → http://127.0.0.1:5678  (localhost only)"
 echo "  Scheduler → http://127.0.0.1:3000 (localhost only)"
