@@ -1,0 +1,66 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment (never send to Docker context)
+.env
+*.env
+!.env.example
+
+# Node modules (installed at build time)
+**/node_modules
+
+# Runtime data
+**/data
+*.sqlite
+*.db
+
+# Logs and temp
+*.log
+/tmp/
+/logs/
+
+# Backups
+/backups/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Docker volumes
+docker-volumes/
+
+# Documentation (not needed at build)
+*.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+
+# Obsidian
+.obsidian/
+
+# Opencode
+.opencode/
+
+# Planning (deleted)
+.planning/
+
+# Cookies/sessions
+cookies.txt
+n8n_cookies.txt
+*.session
+
+# Retro compatibility (retired)
+easyappointments/
+
+# Config real (use example)
+landing-salon/config.json
+
+# User uploads
+landing-salon/uploads/*
+
+# Stray files
+--max-time

@@ -1,0 +1,15 @@
+{
+  "name": "tetoca-scheduler",
+  "version": "1.0.0",
+  "description": "Microservicio de turnos API-first — reemplazo lightweight de EasyAppointments",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "migrate": "node scripts/migrate-ea-to-scheduler.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0"
+  }
+}

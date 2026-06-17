@@ -1,0 +1,26 @@
+{
+    "brand": {
+        "name": "Mi Negocio",
+        "tagline": "Manicura profesional",
+        "address": "Calle 123",
+        "whatsapp": "5491122334455",
+        "instagram": "@mi_negocio",
+        "profesional": "Nombre del Profesional"
+    },
+    "colors": {
+        "primary": "#e8a0a0",
+        "secondary": "#f5f0f0",
+        "accent": "#b56576",
+        "text": "#2d2d2d",
+        "background": "#ffffff"
+    },
+    "logo": "uploads\/logo.png",
+    "gallery": [
+        {
+            "filename": "img_ejemplo1.jpeg"
+        },
+        {
+            "filename": "img_ejemplo2.jpeg"
+        }
+    ]
+}

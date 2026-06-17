@@ -23,6 +23,10 @@ $firstName = trim($data['firstName'] ?? '');
 $lastName = trim($data['lastName'] ?? '');
 $email = trim($data['email'] ?? '');
 $phone = trim($data['phone'] ?? '');
+$phone = preg_replace('/\D/', '', $phone);
+$phone = preg_replace('/^54/', '', $phone);
+$phone = preg_replace('/^0/', '', $phone);
+$phone = preg_replace('/^(\d{2,4})15/', '$1', $phone);
 
 if (!$serviceId || !$date || !$time || !$firstName || !$phone) {
     http_response_code(400);
@@ -30,74 +34,45 @@ if (!$serviceId || !$date || !$time || !$firstName || !$phone) {
     exit;
 }
 
-$ea_user = $_ENV['EA_API_USER'] ?? 'kamiikasee';
-$ea_pass = $_ENV['EA_API_PASS'] ?? 'admin2024';
-$auth = $ea_user . ':' . $ea_pass;
-$ea = 'http://localhost/index.php/api/v1';
+$key = $_ENV['SCHEDULER_API_KEY'] ?? $_ENV['EA_API_PASS'] ?? '';
+$scheduler = schedulerApiUrl();
 
 // 1. Get service duration
-$ch = curl_init("$ea/services/$serviceId");
-curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_USERPWD => $auth, CURLOPT_HTTPAUTH => CURLAUTH_BASIC, CURLOPT_TIMEOUT => 5]);
-$svcBody = curl_exec($ch);
-$svcCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-$svc = json_decode($svcBody, true);
-if (!$svc || (isset($svc['success']) && $svc['success'] === false) || $svcCode !== 200) {
+$r = schedulerApiCall("/services/$serviceId");
+if ($r['httpCode'] !== 200) {
     http_response_code(500);
-    echo json_encode(['error' => 'Servicio no encontrado en EasyAppointments', 'detail' => $svc['message'] ?? 'HTTP ' . $svcCode]);
+    echo json_encode(['error' => 'Servicio no encontrado', 'detail' => $r['data']['message'] ?? 'HTTP ' . $r['httpCode']]);
     exit;
 }
-
+$svc = $r['data'];
 $duration = (int)$svc['duration'];
 $startDt = "$date $time:00";
 $endDt = date('Y-m-d H:i:s', strtotime($startDt) + $duration * 60);
 
 // 2. Find or create customer
+$r = schedulerApiCall("/customers?q=" . urlencode($phone));
+$customers = ($r['httpCode'] === 200 && is_array($r['data'])) ? $r['data'] : [];
 $customerId = null;
-$ch = curl_init("$ea/customers");
-curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_USERPWD => $auth, CURLOPT_HTTPAUTH => CURLAUTH_BASIC, CURLOPT_TIMEOUT => 5]);
-$customersRes = curl_exec($ch);
-$customersCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-$customers = ($customersCode === 200) ? (json_decode($customersRes, true) ?: []) : [];
-
 foreach ($customers as $c) {
-    if (strtolower($c['email'] ?? '') === strtolower($email) || strtolower($c['phone'] ?? '') === strtolower($phone)) {
+    if (strtolower($c['phone'] ?? '') === strtolower($phone)) {
         $customerId = $c['id'];
         break;
     }
 }
 
 if (!$customerId) {
-    $payload = json_encode([
+    $r = schedulerApiCall('/customers', 'POST', [
         'firstName' => $firstName,
         'lastName' => $lastName ?: $firstName,
-        'email' => $email ?: ('no-email-' . substr(md5($phone), 0, 10) . '@tuahora.com.ar'),
+        'email' => $email ?: ('no-email-' . substr(md5($phone), 0, 10) . '@tetoca.com.ar'),
         'phone' => $phone,
     ]);
-    $ch = curl_init("$ea/customers");
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_USERPWD => $auth,
-        CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
-        CURLOPT_TIMEOUT => 5,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    ]);
-    $res = curl_exec($ch);
-    $createCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    $body = json_decode($res, true);
-    if (!$body || $createCode >= 400 || (isset($body['success']) && $body['success'] === false)) {
+    if ($r['httpCode'] >= 400) {
         http_response_code(500);
-        echo json_encode(['error' => 'Error al crear cliente en EasyAppointments', 'detail' => $body['message'] ?? 'HTTP ' . $createCode]);
+        echo json_encode(['error' => 'Error al crear cliente', 'detail' => $r['data']['message'] ?? 'HTTP ' . $r['httpCode']]);
         exit;
     }
-    $customerId = $body['id'] ?? null;
+    $customerId = $r['data']['id'] ?? null;
     if (!$customerId) {
         http_response_code(500);
         echo json_encode(['error' => 'Error al crear cliente: ID no recibido']);
@@ -106,44 +81,22 @@ if (!$customerId) {
 }
 
 // 3. Create appointment
-$payload = json_encode([
+$r = schedulerApiCall('/appointments', 'POST', [
     'start' => $startDt,
     'end' => $endDt,
     'serviceId' => $serviceId,
     'providerId' => 5,
     'customerId' => $customerId,
-    'notes' => "Reserva desde tuahora.com.ar",
+    'notes' => "Reserva desde tetoca.com.ar",
 ]);
 
-$ch = curl_init("$ea/appointments");
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_USERPWD => $auth,
-    CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
-    CURLOPT_TIMEOUT => 5,
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => $payload,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-]);
-$res = curl_exec($ch);
-$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curlErr = curl_error($ch);
-curl_close($ch);
-
-if ($curlErr) {
+if ($r['httpCode'] >= 400) {
     http_response_code(500);
-    echo json_encode(['error' => 'Error de conexión con EasyAppointments: ' . $curlErr]);
+    echo json_encode(['error' => 'Error al crear turno', 'detail' => $r['data']['message'] ?? 'HTTP ' . $r['httpCode']]);
     exit;
 }
 
-$appt = json_decode($res, true);
-if ($code >= 400 || !$appt || (isset($appt['success']) && $appt['success'] === false)) {
-    $eaMsg = is_array($appt) ? ($appt['message'] ?? json_encode($appt)) : 'HTTP ' . $code;
-    http_response_code(500);
-    echo json_encode(['error' => 'Error al crear turno en EasyAppointments', 'detail' => $eaMsg]);
-    exit;
-}
-
+$appt = $r['data'];
 echo json_encode([
     'success' => true,
     'appointmentId' => $appt['id'] ?? null,

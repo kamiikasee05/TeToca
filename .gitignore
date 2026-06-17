@@ -1,0 +1,45 @@
+# Environment (credenciales reales - NO committear)
+.env
+*.env
+!.env.example
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs y temp
+*.log
+/tmp/
+/logs/
+
+# Backups
+/backups/
+
+# Cookies/sessions
+cookies.txt
+n8n_cookies.txt
+*.session
+
+# Docker volumes (datos sensibles)
+docker-volumes/
+
+# Config con datos reales (telefonos, branding, etc.)
+landing-salon/config.json
+landing/config.json
+
+# Imagenes subidas por usuarios (mantener .htaccess)
+landing-salon/uploads/*
+!landing-salon/uploads/.htaccess
+
+# SQLite runtime data
+scheduler/data/
+
+# Directorio legacy (EasyAppointments retirado, contiene .env con secretos)
+/easyappointments/
+
+# OpenWA (repo de terceros, imagen pre-built)
+/openwa/
+
+# Node modules (distros propias)
+scheduler/node_modules/
+openwa/node_modules/

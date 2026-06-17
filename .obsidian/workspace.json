@@ -1,0 +1,235 @@
+{
+  "main": {
+    "id": "f8d065925aa00a62",
+    "type": "split",
+    "children": [
+      {
+        "id": "ad2b1ff27683d23b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "41926e0bd4003b2c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "GUIA-CONFIGURACION.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "GUIA-CONFIGURACION"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f867eb0b0d4f4faa",
+    "type": "split",
+    "children": [
+      {
+        "id": "c1cf8581db43db3e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "73975c8a38e23c33",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de archivos"
+            }
+          },
+          {
+            "id": "3cf41e5a3efd462e",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Buscar"
+            }
+          },
+          {
+            "id": "a0bb59605ef40fcc",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "e6f49fa236404c56",
+    "type": "split",
+    "children": [
+      {
+        "id": "e6b07c3a01d7359f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "639414de31e96762",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "README.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": false
+              },
+              "icon": "links-coming-in",
+              "title": "Enlaces entrantes de README"
+            }
+          },
+          {
+            "id": "28e80ee2e62bd4bf",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "contrato-servicio.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Enlaces salientes de contrato-servicio"
+            }
+          },
+          {
+            "id": "d954ae8bfc894db4",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "3305aef9fb1c4813",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas las propiedades"
+            }
+          },
+          {
+            "id": "35f738f219e28dfa",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "GUIA-CONFIGURACION.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Esquema de GUIA-CONFIGURACION"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 440.5
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir selector rápido": false,
+      "graph:Abrir vista gráfica": false,
+      "canvas:Crear nuevo lienzo": false,
+      "daily-notes:Abrir la nota de hoy": false,
+      "templates:Insertar plantilla": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Crear nueva base": false
+    }
+  },
+  "active": "41926e0bd4003b2c",
+  "lastOpenFiles": [
+    "landing-salon/api/disponibilidad.php",
+    "baileys-service/package-lock.json",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/composers/string.d.ts",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/composers/interface.js",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/composers/string.js",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/composers/buffer.js",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/composers/interface.d.ts",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/composers/buffer.d.ts",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/encoder.js",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/encoder.d.ts",
+    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/decoder.js",
+    "baileys-service/node_modules/@tokenizer/inflate/node_modules/ms/readme.md",
+    "baileys-service/node_modules/@tokenizer/inflate/node_modules/ms/license.md",
+    "baileys-service/node_modules/@tokenizer/inflate/node_modules/debug/README.md",
+    "baileys-service/node_modules/type-is/node_modules/media-typer/README.md",
+    "baileys-service/node_modules/type-is/node_modules/media-typer/HISTORY.md",
+    "baileys-service/node_modules/send/node_modules/ms/readme.md",
+    "baileys-service/node_modules/send/node_modules/ms/license.md",
+    "baileys-service/node_modules/qified/node_modules/hookified/README.md",
+    "baileys-service/node_modules/protobufjs/ext/descriptor/README.md",
+    "baileys-service/node_modules/protobufjs/ext/debug/README.md",
+    "baileys-service/node_modules/pngjs/coverage/lcov-report/sort-arrow-sprite.png",
+    "baileys-service/node_modules/pngjs/coverage/lcov-report/favicon.png",
+    "baileys-service/node_modules/music-metadata/node_modules/ms/readme.md",
+    "baileys-service/node_modules/music-metadata/node_modules/ms/license.md",
+    "baileys-service/node_modules/music-metadata/node_modules/debug/README.md",
+    "baileys-service/node_modules/music-metadata/node_modules/content-type/README.md",
+    "baileys-service/node_modules/https-proxy-agent/node_modules/ms/readme.md",
+    "baileys-service/node_modules/https-proxy-agent/node_modules/ms/license.md",
+    "baileys-service/node_modules/https-proxy-agent/node_modules/debug/README.md",
+    "baileys-service/node_modules/axios/lib/helpers/README.md",
+    "baileys-service/node_modules/axios/lib/env/README.md",
+    "baileys-service/node_modules/axios/lib/core/README.md",
+    "baileys-service/node_modules/axios/lib/adapters/README.md",
+    "baileys-service/node_modules/agent-base/node_modules/ms/readme.md",
+    "baileys-service/node_modules/agent-base/node_modules/ms/license.md",
+    "baileys-service/node_modules/agent-base/node_modules/debug/README.md",
+    "baileys-service/node_modules/protobufjs/google/README.md",
+    "baileys-service/node_modules/pino/pretty-demo.png",
+    "baileys-service/node_modules/pino/pino-tree.png",
+    "baileys-service/node_modules/pino/pino-logo-hire.png",
+    "baileys-service/node_modules/pino/pino-banner.png",
+    "baileys-service/node_modules/pino/favicon-32x32.png",
+    "baileys-service/node_modules/pino/favicon-16x16.png",
+    "openwa/node_modules/swagger-ui-dist/favicon-16x16.png",
+    "openwa/node_modules/pngjs/coverage/lcov-report/sort-arrow-sprite.png"
+  ]
+}

@@ -1,0 +1,258 @@
+[
+  {
+    "updatedAt": "2026-06-13T17:13:52.216Z",
+    "createdAt": "2026-06-11T23:13:01.600Z",
+    "id": "wf2-recordatorio",
+    "name": "WF-2: Recordatorio 24 horas antes",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "schedule-trigger",
+        "name": "Schedule diario 18:00",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1,
+        "position": [
+          250,
+          300
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 18 * * *"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "get-tomorrow",
+        "name": "Obtener fecha de ma+�ana",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 1,
+        "position": [
+          450,
+          300
+        ],
+        "parameters": {
+          "jsCode": "const tomorrow = new Date();\ntomorrow.setDate(tomorrow.getDate() + 1);\nconst dateStr = tomorrow.toISOString().split('T')[0];\nreturn [{ json: { date: dateStr } }];"
+        }
+      },
+      {
+        "id": "fetch-bookings",
+        "name": "Consultar turnos EA",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [
+          650,
+          300
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "http://scheduler:3000/api/v1/appointments?with=customer,service,provider",
+          "authentication": "genericCredentialType",
+          "options": {},
+          "genericAuthType": "httpBasicAuth"
+        },
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "g4JZy1RbupSK6sx9",
+            "name": "EA Cred"
+          }
+        }
+      },
+      {
+        "id": "filter-tomorrow",
+        "name": "Filtrar turnos de ma+�ana",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 1,
+        "position": [
+          850,
+          300
+        ],
+        "parameters": {
+          "jsCode": "const tomorrow = new Date();\ntomorrow.setDate(tomorrow.getDate() + 1);\nconst dateStr = tomorrow.toISOString().split('T')[0];\n\nconst bookings = $input.all();\nconst filtered = bookings.filter(b => {\n  const start = b.json.start;\n  return start && start.startsWith(dateStr);\n});\n\nif (filtered.length === 0) {\n  return [{ json: { empty: true } }];\n}\nreturn filtered.map(b => {\n  const cust = b.json.customer || {};\n  const serv = b.json.service || {};\n  const prov = b.json.provider || {};\n  const startTime = b.json.start || '';\n  const timePart = startTime.split(' ')[1] || '';\n  return {\n    json: {\n      phone: (cust.phone || '').replace('+', '').replace(' ', ''),\n      clientName: (cust.firstName || '') + ' ' + (cust.lastName || ''),\n      service: serv.name || '',\n      date: startTime.split(' ')[0] || '',\n      time: timePart.substring(0, 5),\n      businessName: 'Nails by Laura',\n      providerName: (prov.firstName || '') + ' ' + (prov.lastName || '')\n    }\n  };\n});"
+        }
+      },
+      {
+        "id": "check-empty",
+        "name": "-+Hay turnos?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [
+          1050,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "string": [
+              {
+                "value1": "={{ $json.empty }}",
+                "operation": "isNotEmpty",
+                "value2": ""
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "send-reminder",
+        "name": "Enviar recordatorio",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [
+          1250,
+          500
+        ],
+        "parameters": {
+          "authentication": "none",
+          "method": "GET",
+          "url": "={{ 'http://scheduler:3000/api/v1/whatsapp/send?phone=' + encodeURIComponent($json.phone) + '&message=' + encodeURIComponent($json.message) }}",
+          "sendQuery": true,
+          "sendBody": false,
+          "sendHeaders": false,
+          "options": {}
+        }
+      },
+      {
+        "id": "format-message",
+        "name": "Formatear mensaje",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          950,
+          300
+        ],
+        "parameters": {
+          "values": {
+            "string": [
+              {
+                "name": "message",
+                "value": "=���� Recordatorio: ten+�s un turno ma+�ana, {{ $json.clientName }}!\n\n���� {{ $json.service }}\n���� {{ $json.date }} a las {{ $json.time }}\n���� {{ $json.providerName || $json.professional }}\n���� {{ $json.businessName || 'Mitre 456, Chamical' }}\n\nPara cancelar, respond+� CANCELAR a este mensaje."
+              }
+            ]
+          },
+          "options": {
+            "keepOutput": true
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Schedule diario 18:00": {
+        "main": [
+          [
+            {
+              "node": "Obtener fecha de ma+�ana",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Obtener fecha de ma+�ana": {
+        "main": [
+          [
+            {
+              "node": "Consultar turnos EA",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Consultar turnos EA": {
+        "main": [
+          [
+            {
+              "node": "Filtrar turnos de ma+�ana",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filtrar turnos de ma+�ana": {
+        "main": [
+          [
+            {
+              "node": "Formatear mensaje",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "-+Hay turnos?": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Enviar recordatorio",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Formatear mensaje": {
+        "main": [
+          [
+            {
+              "node": "-+Hay turnos?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "availableInMCP": false
+    },
+    "staticData": {
+      "node:Schedule diario 18:00": {
+        "recurrenceRules": []
+      },
+      "global": {
+        "lastProcessedId": 0
+      }
+    },
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": null,
+    "versionId": "35267f4d-8aa7-4c9e-b002-14af7dc523a8",
+    "activeVersionId": "35267f4d-8aa7-4c9e-b002-14af7dc523a8",
+    "versionCounter": 29,
+    "triggerCount": 1,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-06-11T23:13:01.606Z",
+        "createdAt": "2026-06-11T23:13:01.606Z",
+        "role": "workflow:owner",
+        "workflowId": "wf2-recordatorio",
+        "projectId": "y5S2Xurtv93QXz6M",
+        "project": {
+          "updatedAt": "2026-06-11T21:46:08.894Z",
+          "createdAt": "2026-06-11T02:57:37.602Z",
+          "id": "y5S2Xurtv93QXz6M",
+          "name": "Ezequiel Godoy <godoy97@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "5f87689e-a34b-4d5e-8018-dc12104ac779"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": "Version 35267f4d",
+      "description": ""
+    }
+  }
+]

@@ -2,11 +2,18 @@
 ob_start();
 session_start();
 
+$storedHash = $_ENV['ADMIN_PASSWORD_HASH'] ?? '';
+if (!$storedHash || $storedHash === 'CAMBIAR_HASH_BCRYPT') {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'ADMIN_PASSWORD_HASH no configurado. Ejecutar: php -r "echo password_hash(\'<password>\', PASSWORD_BCRYPT);"']);
+    exit;
+}
+
 $configFile = __DIR__ . '/../config.json';
 if (!file_exists($configFile)) {
     $config = [
-        'password' => 'admin2024',
-        'brand' => ['name' => 'Nails by Laura', 'tagline' => '', 'address' => '', 'whatsapp' => '', 'instagram' => ''],
+        'brand' => ['name' => 'Nails by Laura', 'tagline' => '', 'address' => '', 'whatsapp' => '', 'instagram' => '', 'profesional' => ''],
         'colors' => ['primary' => '#E8A0A0', 'secondary' => '#F5F0F0', 'accent' => '#B56576', 'text' => '#2D2D2D', 'background' => '#FFFFFF'],
         'logo' => 'uploads/logo.png',
         'gallery' => [],
@@ -21,6 +28,14 @@ function saveConfig(array $data): bool {
     if ($json === false) return false;
     if (!is_writable($configFile) && !is_writable(dirname($configFile))) return false;
     file_put_contents($configFile, $json);
+
+    // Also sync to landing (strip password)
+    $landingFile = '/var/www/landing-config.json';
+    if (file_exists($landingFile) || is_writable(dirname($landingFile))) {
+        $public = $data;
+        unset($public['password']);
+        file_put_contents($landingFile, json_encode($public, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
     return true;
 }
 
@@ -38,8 +53,7 @@ $galleryDir = $uploadDir . 'gallery/';
 if (!is_dir($galleryDir)) { mkdir($galleryDir, 0755, true); }
 if (!is_dir($uploadDir)) { mkdir($uploadDir, 0755, true); }
 
-$authPassword = $config['password'] ?? 'admin2024';
-$isLoggedIn = ($_SESSION['tuahora_admin'] ?? false) === true;
+$isLoggedIn = ($_SESSION['tetoca_admin'] ?? false) === true;
 
 if (isset($_GET['logout'])) {
     session_destroy();
@@ -65,17 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $loginError = 'Demasiados intentos. Espera 15 minutos.';
     } else {
         $inputPass = $_POST['password'] ?? '';
-        $storedHash = $_ENV['ADMIN_PASSWORD_HASH'] ?? '';
-        $passwordValid = false;
-        if ($storedHash && $storedHash !== 'CAMBIAR_HASH_BCRYPT') {
-            $passwordValid = password_verify($inputPass, $storedHash);
-        } else {
-            $passwordValid = ($inputPass === $authPassword);
-        }
+        $passwordValid = password_verify($inputPass, $storedHash);
         if ($passwordValid) {
             $attempts[$ip] = [];
             file_put_contents($attemptsFile, json_encode($attempts));
-            $_SESSION['tuahora_admin'] = true;
+            $_SESSION['tetoca_admin'] = true;
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             header('Location: index.php');
             exit;
@@ -99,6 +107,7 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action
         $brand['address'] = trim($_POST['address'] ?? '');
         $brand['whatsapp'] = trim($_POST['whatsapp'] ?? '');
         $brand['instagram'] = trim($_POST['instagram'] ?? '');
+        $brand['profesional'] = trim($_POST['profesional'] ?? '');
         $config['brand'] = $brand;
         if (!saveConfig($config)) {
             jsonResponse(['error' => 'No se puede guardar: permisos de escritura en config.json'], 500);
@@ -172,38 +181,45 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action
     }
 
     if ($action === 'upload_gallery') {
-        if (empty($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
-            jsonResponse(['error' => 'Error al subir la imagen'], 400);
-        }
-        $file = $_FILES['image'];
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) { jsonResponse(['error' => 'Solo JPG y PNG'], 400); }
-        if ($file['size'] > 5 * 1024 * 1024) { jsonResponse(['error' => 'Máximo 5MB'], 400); }
-
+        if (empty($_FILES['images'])) { jsonResponse(['error' => 'No se recibieron imágenes'], 400); }
+        $files = $_FILES['images'];
         $gallery = $config['gallery'] ?? [];
-        if (count($gallery) >= 10) { jsonResponse(['error' => 'Máximo 10 imágenes'], 400); }
+        $added = 0;
+        $errors = [];
 
-        $uniqueName = uniqid('img_', true) . '.' . $ext;
-        $destPath = $galleryDir . $uniqueName;
+        for ($i = 0; $i < count($files['name']); $i++) {
+            if ($files['error'][$i] !== UPLOAD_ERR_OK) continue;
+            if (count($gallery) >= 10) { $errors[] = 'Máximo 10 imágenes'; break; }
 
-        if ($ext === 'png') {
-            $src = imagecreatefrompng($file['tmp_name']);
-            if (!$src) { jsonResponse(['error' => 'No se pudo procesar la imagen'], 400); }
-            imagepng($src, $destPath, 8);
-            imagedestroy($src);
-        } else {
-            $src = imagecreatefromjpeg($file['tmp_name']);
-            if (!$src) { jsonResponse(['error' => 'No se pudo procesar la imagen'], 400); }
-            imagejpeg($src, $destPath, 85);
-            imagedestroy($src);
+            $ext = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['jpg', 'jpeg', 'png'])) { $errors[] = $files['name'][$i] . ': Solo JPG y PNG'; continue; }
+            if ($files['size'][$i] > 5 * 1024 * 1024) { $errors[] = $files['name'][$i] . ': Máximo 5MB'; continue; }
+
+            $uniqueName = uniqid('img_', true) . '.' . $ext;
+            $destPath = $galleryDir . $uniqueName;
+
+            if ($ext === 'png') {
+                $src = imagecreatefrompng($files['tmp_name'][$i]);
+                if (!$src) continue;
+                imagepng($src, $destPath, 8);
+                imagedestroy($src);
+            } else {
+                $src = imagecreatefromjpeg($files['tmp_name'][$i]);
+                if (!$src) continue;
+                imagejpeg($src, $destPath, 85);
+                imagedestroy($src);
+            }
+
+            $gallery[] = ['filename' => $uniqueName];
+            $added++;
         }
 
-        $gallery[] = ['filename' => $uniqueName];
+        if ($added === 0 && empty($errors)) { jsonResponse(['error' => 'No se pudo procesar ninguna imagen'], 400); }
         $config['gallery'] = $gallery;
         if (!saveConfig($config)) {
             jsonResponse(['error' => 'No se puede guardar: permisos de escritura en config.json'], 500);
         }
-        jsonResponse(['success' => true, 'gallery' => $gallery]);
+        jsonResponse(['success' => true, 'gallery' => $gallery, 'added' => $added, 'errors' => $errors]);
     }
 
     if ($action === 'delete_gallery') {
@@ -244,7 +260,7 @@ $waNumber = $brand['whatsapp'] ?? '5493826403110';
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TuAhora — Panel</title>
+<title>TeToca — Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
 <style>
@@ -450,7 +466,7 @@ textarea { resize:vertical; min-height:60px; }
 <?php if (!$isLoggedIn): ?>
 <div class="login-wrapper">
     <div class="login-card">
-        <h1>TuAhora</h1>
+        <h1>TeToca</h1>
         <p class="subtitle">Panel de administración</p>
         <form method="post">
             <input type="hidden" name="action" value="login">
@@ -464,7 +480,7 @@ textarea { resize:vertical; min-height:60px; }
 
 <?php else: ?>
 <header>
-    <h1 id="header-title">TuAhora · Dashboard</h1>
+    <h1 id="header-title">TeToca · Dashboard</h1>
     <a href="logout.php">Cerrar sesión</a>
 </header>
 
@@ -624,6 +640,10 @@ textarea { resize:vertical; min-height:60px; }
                 <label>Usuario de Instagram (con @)</label>
                 <input type="text" name="instagram" value="<?=htmlspecialchars($brand['instagram'] ?? '')?>">
             </div>
+            <div class="pf-row">
+                <label>Nombre del profesional</label>
+                <input type="text" name="profesional" value="<?=htmlspecialchars($brand['profesional'] ?? '')?>">
+            </div>
             <div class="form-actions">
                 <button type="button" class="btn btn-primary" onclick="guardarMarca()">Guardar cambios</button>
             </div>
@@ -722,7 +742,7 @@ textarea { resize:vertical; min-height:60px; }
             <label class="upload-zone" id="galleryUploadZone">
                 <div>📁 Hacé clic o arrastrá una imagen</div>
                 <div style="font-size:12px;color:#999;margin-top:4px;">JPG o PNG · Máx 5MB · <?=count($gallery)?>/10</div>
-                <input type="file" accept="image/jpeg,image/png" id="galleryInput" hidden>
+                <input type="file" accept="image/jpeg,image/png" id="galleryInput" hidden multiple>
             </label>
         </div>
     </div>
@@ -772,7 +792,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         const tab = this.dataset.tab;
         var panel = document.getElementById('tab-' + tab);
         if (panel) panel.classList.add('active');
-        document.getElementById('header-title').textContent = 'TuAhora · ' + this.textContent;
+        document.getElementById('header-title').textContent = 'TeToca · ' + this.textContent;
         if (tab === 'dashboard') cargarDashboard();
         if (tab === 'calendario') renderCalendario();
         if (tab === 'turnos') renderTurnos();
@@ -1397,18 +1417,31 @@ if (formColores) {
             .catch(function() { mostrarToast('Error de conexión'); });
     };
 
-    function subirGaleria(file) {
-        if (['image/jpeg', 'image/png'].indexOf(file.type) === -1) { mostrarToast('Solo JPG y PNG'); return; }
-        if (file.size > 5 * 1024 * 1024) { mostrarToast('Máximo 5MB'); return; }
+    function subirGaleria(files) {
+        var total = files.length;
+        var skipped = 0;
+        var valid = [];
+        for (var i = 0; i < total; i++) {
+            var f = files[i];
+            if (['image/jpeg', 'image/png'].indexOf(f.type) === -1) { skipped++; continue; }
+            if (f.size > 5 * 1024 * 1024) { skipped++; continue; }
+            valid.push(f);
+        }
+        if (valid.length === 0) { mostrarToast('Ninguna imagen válida'); return; }
+
         var fd = new FormData();
         fd.append('action', 'upload_gallery');
         fd.append('csrf_token', CSRF_TOKEN);
-        fd.append('image', file);
+        valid.forEach(function(f) { fd.append('images[]', f); });
+
+        mostrarToast('Subiendo ' + valid.length + ' imagen(es)...');
         fetch('index.php', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(d) {
                 if (d.error) { mostrarToast('Error: ' + d.error); return; }
-                mostrarToast('Imagen agregada');
+                var msg = d.added + ' imagen(es) agregada(s)';
+                if (d.errors && d.errors.length) msg += ' (' + d.errors.length + ' error(es))';
+                mostrarToast(msg);
                 renderizarGaleria(d.gallery);
             })
             .catch(function() { mostrarToast('Error de conexión'); });
@@ -1417,16 +1450,19 @@ if (formColores) {
     var galleryInput = document.getElementById('galleryInput');
     var galleryZone = document.getElementById('galleryUploadZone');
     if (galleryInput && galleryZone) {
-        galleryZone.addEventListener('click', function() { galleryInput.click(); });
         galleryZone.addEventListener('dragover', function(e) { e.preventDefault(); this.style.borderColor = '#b76e79'; });
         galleryZone.addEventListener('dragleave', function() { this.style.borderColor = ''; });
         galleryZone.addEventListener('drop', function(e) {
             e.preventDefault();
             this.style.borderColor = '';
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) subirGaleria(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) subirGaleria(e.dataTransfer.files);
         });
         galleryInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) subirGaleria(this.files[0]);
+            if (this.files && this.files.length > 0) {
+                var files = Array.from(this.files);
+                this.value = '';
+                subirGaleria(files);
+            }
         });
     }
 })();
