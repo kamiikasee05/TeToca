@@ -160,26 +160,29 @@ cat > .env <<ENVEOF
 # ============================================================
 
 # --- Scheduler API ---
-SCHEDULER_API_KEY=${SCHEDULER_API_KEY}
+SCHEDULER_API_KEY='${SCHEDULER_API_KEY}'
 
 # --- OpenWA (WhatsApp) ---
-OPENWA_API_KEY=${OPENWA_API_KEY}
-API_MASTER_KEY=${API_MASTER_KEY}
-OPENWA_SESSION_ID=${OPENWA_SESSION_ID}
+OPENWA_API_KEY='${OPENWA_API_KEY}'
+API_MASTER_KEY='${API_MASTER_KEY}'
+OPENWA_SESSION_ID='${OPENWA_SESSION_ID}'
 
 # --- n8n ---
-N8N_WEBHOOK_TOKEN=${N8N_WEBHOOK_TOKEN}
-N8N_OWNER_PHONE=${WHATSAPP_PHONE}
+N8N_WEBHOOK_TOKEN='${N8N_WEBHOOK_TOKEN}'
+N8N_OWNER_PHONE='${WHATSAPP_PHONE}'
 
 # --- Admin Panel ---
-ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+ADMIN_PASSWORD_HASH='${ADMIN_PASSWORD_HASH}'
 
 # --- Redis ---
-REDIS_PASSWORD=${REDIS_PASSWORD}
+REDIS_PASSWORD='${REDIS_PASSWORD}'
 
 # --- CORS ---
-CORS_ORIGIN=${CORS_ORIGIN}
+CORS_ORIGIN='${CORS_ORIGIN}'
 ENVEOF
+
+# Strip Windows CRLF if present (git can introduce \r)
+sed -i 's/\r$//' .env 2>/dev/null || true
 
 if [[ -f .env ]]; then
     echo -e "  ${GREEN}✓${NC} .env generado"

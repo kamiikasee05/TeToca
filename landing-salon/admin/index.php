@@ -26,16 +26,13 @@ function saveConfig(array $data): bool {
     global $configFile;
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     if ($json === false) return false;
-    if (!is_writable($configFile) && !is_writable(dirname($configFile))) return false;
-    file_put_contents($configFile, $json);
+    $result = @file_put_contents($configFile, $json);
+    if ($result === false) return false;
 
-    // Also sync to landing (strip password)
     $landingFile = '/var/www/landing-config.json';
-    if (file_exists($landingFile) || is_writable(dirname($landingFile))) {
-        $public = $data;
-        unset($public['password']);
-        file_put_contents($landingFile, json_encode($public, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
+    $public = $data;
+    unset($public['password']);
+    @file_put_contents($landingFile, json_encode($public, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     return true;
 }
 

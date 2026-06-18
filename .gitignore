@@ -43,3 +43,6 @@ scheduler/data/
 # Node modules (distros propias)
 scheduler/node_modules/
 openwa/node_modules/
+
+# OpenCode plugins (third-party clones)
+.opencode/ponytail/

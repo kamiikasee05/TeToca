@@ -6,7 +6,7 @@
 services:
   scheduler:
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     environment:
       NODE_ENV: production
       LOG_LEVEL: warn
@@ -19,7 +19,7 @@ services:
 
   landing-admin:
     ports:
-      - "127.0.0.1:8081:8080"
+      - "8081:8080"
     environment:
       LOG_LEVEL: warn
     healthcheck:
@@ -31,7 +31,7 @@ services:
 
   n8n:
     ports:
-      - "127.0.0.1:5678:5678"
+      - "5678:5678"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz"]
       interval: 30s

@@ -23,6 +23,8 @@ services:
     environment:
       PORT: 3000
       API_KEY: ${SCHEDULER_API_KEY}
+      OPENWA_API_KEY: ${OPENWA_API_KEY}
+      OPENWA_SESSION_ID: ${OPENWA_SESSION_ID}
       N8N_WEBHOOK_URL: http://n8n:5678/webhook/
     depends_on:
       n8n:
