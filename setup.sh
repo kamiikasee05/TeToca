@@ -39,15 +39,27 @@ if ! command -v php &>/dev/null; then
     missing_deps+=("php-cli")
 fi
 
+if ! command -v git &>/dev/null; then
+    missing_deps+=("git")
+fi
+
+if ! command -v docker &>/dev/null; then
+    missing_deps+=("docker")
+fi
+
 if [[ ${#missing_deps[@]} -gt 0 ]]; then
     echo -e "${YELLOW}Faltan dependencias: ${missing_deps[*]}${NC}"
     echo ""
     read -p "¿Las instalo automáticamente? (s/n): " INSTALL_DEPS
     if [[ "$INSTALL_DEPS" =~ ^[sSyY]$ ]]; then
-        sudo apt update && sudo apt install -y openssl uuid-runtime php-cli || abort "No se pudieron instalar las dependencias."
+        sudo apt update && sudo apt install -y openssl uuid-runtime php-cli git || abort "No se pudieron instalar las dependencias."
+        if ! command -v docker &>/dev/null; then
+            echo -e "${RED}Docker no se instala automáticamente. Instalalo primero: https://docs.docker.com/engine/install/${NC}"
+            abort "Docker es obligatorio."
+        fi
         echo -e "${GREEN}✓ Dependencias instaladas${NC}"
     else
-        abort "Se necesitan: sudo apt install -y openssl uuid-runtime php-cli"
+        abort "Se necesitan: sudo apt install -y openssl uuid-runtime php-cli git  + Docker"
     fi
 fi
 
@@ -227,16 +239,54 @@ JSONEOF
 
 echo -e "  ${GREEN}✓${NC} landing-salon/config.json generado"
 
-# ─── 6. Mostrar resumen ───────────────────────────────────────
+# ─── 6. Clonar OpenWA si no existe ────────────────────────────
+echo ""
+echo -e "${CYAN}─── OpenWA (motor de WhatsApp) ───${NC}"
+
+if [[ -d openwa ]]; then
+    echo -e "  openwa/ ya existe, omitiendo clonación."
+else
+    echo "  Clonando desde GitHub..."
+    git clone https://github.com/rmyndharis/OpenWA.git openwa || abort "Error clonando OpenWA"
+    echo -e "  ${GREEN}✓${NC} Repositorio clonado"
+fi
+
+# ─── 7. Buildear imágenes Docker ──────────────────────────────
+echo ""
+echo -e "${CYAN}─── Buildenado imágenes Docker ───${NC}"
+echo -e "  Esto puede tardar varios minutos (especialmente OpenWA)."
+echo ""
+
+COMPOSE_ARGS="-f docker-compose.yml -f docker-compose.prod.yml"
+
+echo "  [1/3] OpenWA (WhatsApp + Chromium)..."
+(cd openwa && docker build -t openwa-openwa:latest .) || abort "Error buildenado OpenWA"
+echo -e "  ${GREEN}✓${NC} openwa-openwa:latest"
+
+echo "  [2/3] Scheduler API..."
+docker compose $COMPOSE_ARGS build scheduler || abort "Error buildenado scheduler"
+echo -e "  ${GREEN}✓${NC} scheduler"
+
+echo "  [3/3] Admin Panel..."
+docker compose $COMPOSE_ARGS build landing-admin || abort "Error buildenado landing-admin"
+echo -e "  ${GREEN}✓${NC} landing-admin"
+
+echo ""
+echo -e "${GREEN}✓ Todas las imágenes buildendas${NC}"
+
+# ─── 8. Mostrar resumen ───────────────────────────────────────
 echo ""
 echo -e "${CYAN}============================================${NC}"
-echo -e "${CYAN}  ¡Configuración completada!${NC}"
+echo -e "${CYAN}  ¡Setup completado!${NC}"
 echo -e "${CYAN}============================================${NC}"
 echo ""
 echo -e "${GREEN}Archivos generados:${NC}"
 echo -e "  ${YELLOW}.env${NC}"
 echo -e "  ${YELLOW}landing/config.json${NC}"
 echo -e "  ${YELLOW}landing-salon/config.json${NC}"
+echo ""
+echo -e "${GREEN}Imágenes buildendas:${NC}"
+echo -e "  openwa-openwa, scheduler, landing-admin"
 echo ""
 echo -e "${GREEN}────────────────────────────────────────${NC}"
 echo ""
@@ -250,9 +300,8 @@ echo -e "    Session ID: ${YELLOW}${OPENWA_SESSION_ID}${NC}"
 echo -e "    API Key:    ${YELLOW}${OPENWA_API_KEY}${NC}"
 echo ""
 echo -e "  ${CYAN}⚠  Copiá el Session ID y la API Key —${NC}"
-echo -e "  ${CYAN}   los necesitás en el paso 7 para vincular WhatsApp.${NC}"
+echo -e "  ${CYAN}   los necesitás para vincular WhatsApp (ver GUIA-DEPLOY.md paso 7).${NC}"
 echo ""
-echo -e "${GREEN}Siguientes pasos:${NC}"
-echo "  chmod +x clone-openwa.sh && ./clone-openwa.sh"
+echo -e "${GREEN}Siguiente paso:${NC}"
 echo "  chmod +x deploy.sh && ./deploy.sh"
 echo ""
