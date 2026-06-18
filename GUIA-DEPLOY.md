@@ -23,38 +23,92 @@ cd TETOCA
 
 ---
 
-## Paso 2 — Configurar variables de entorno
+## Paso 2 — Generar todas las claves y armar el .env
+
+Abrí una terminal WSL y ejecutá estos comandos **uno por uno**. Cada uno genera una clave distinta. Guardá todo en un bloc de notas aparte, que lo vas a necesitar en el paso siguiente.
+
+### 2.1 — Generar las claves aleatorias
 
 ```bash
-# Crear .env desde el template
-cp .env.example .env
+# Clave para proteger la API del scheduler (32 caracteres hex)
+echo "SCHEDULER_API_KEY: $(openssl rand -hex 16)"
 
-# Editar con tus valores reales
+# Clave para autenticarse contra OpenWA (32 caracteres hex)
+echo "OPENWA_API_KEY: $(openssl rand -hex 16)"
+
+# API_MASTER_KEY debe ser IDENTICA a OPENWA_API_KEY. Guardala para usarla después.
+
+# Token para proteger los webhooks de n8n
+echo "N8N_WEBHOOK_TOKEN: $(openssl rand -hex 16)"
+
+# Contraseña para Redis
+echo "REDIS_PASSWORD: $(openssl rand -hex 16)"
+```
+
+### 2.2 — Generar el ID de sesión de WhatsApp
+
+El `OPENWA_SESSION_ID` **no se obtiene de ningún lado** — lo inventás vos ahora. Es un identificador único que va a identificar tu sesión de WhatsApp en OpenWA. Después, en el paso 7, vas a usar este mismo ID para crear la sesión en el dashboard.
+
+```bash
+echo "OPENWA_SESSION_ID: $(uuidgen)"
+```
+
+Esto te devuelve algo como `b7f1a3d9-4c2e-8f6b-9a0d-1e3f5c7b9a2d`.
+
+### 2.3 — Configurar tu número de WhatsApp
+
+```bash
+# Reemplazá 5493826403110 por TU número (código de país + número, sin + ni espacios)
+echo "N8N_OWNER_PHONE: 5493826403110"
+```
+
+### 2.4 — Generar el hash de la contraseña del admin
+
+Necesitás PHP instalado en WSL. Si no lo tenés, instalalo:
+
+```bash
+sudo apt update && sudo apt install php-cli -y
+```
+
+Después generá el hash (cambia `tu_contraseña_segura` por la que quieras usar para entrar al panel):
+
+```bash
+php -r "echo 'ADMIN_PASSWORD_HASH: ' . password_hash('tu_contraseña_segura', PASSWORD_BCRYPT) . PHP_EOL;"
+```
+
+Esto devuelve un hash largo tipo `$2y$10$EixZaYVK1fsbw1ZfbX3OXe.P0jFGnJvfMlL6qNvGkRKlX3cMfSm7u`. **Ese hash entero** (con los `$`) va en la variable. Con esto entrás al dashboard con usuario `admin` y la contraseña que elegiste.
+
+### 2.5 — Configurar CORS
+
+```bash
+# La IP de tu server — desde dónde se va a acceder a la landing
+echo "CORS_ORIGIN: http://192.168.18.11"
+```
+
+### 2.6 — Armar el archivo .env
+
+```bash
+cp .env.example .env
 nano .env
 ```
 
-Llená **todas** las variables. Las críticas son:
+Reemplazá cada placeholder `CAMBIAR_*` con los valores que generaste. **Importante:** `API_MASTER_KEY` debe ser el **mismo valor** que `OPENWA_API_KEY`.
 
-| Variable | Qué poner |
-|---|---|
-| `SCHEDULER_API_KEY` | Una clave larga aleatoria (32+ chars) |
-| `OPENWA_API_KEY` | Otra clave aleatoria (32+ chars) |
-| `API_MASTER_KEY` | La misma que OPENWA_API_KEY |
-| `OPENWA_SESSION_ID` | Un UUID (generalo con `uuidgen` en WSL) |
-| `N8N_WEBHOOK_TOKEN` | Otra clave aleatoria |
-| `N8N_OWNER_PHONE` | Tu número de WhatsApp con código de país |
-| `ADMIN_PASSWORD_HASH` | Hash bcrypt de tu password |
-| `REDIS_PASSWORD` | Otra clave aleatoria |
-| `CORS_ORIGIN` | `http://192.168.18.11` (la IP del server) |
+Tu `.env` final debería verse así:
 
-Para generar el hash del password admin:
-```bash
-# En WSL, si tenés php instalado:
-php -r "echo password_hash('tu_password', PASSWORD_BCRYPT);"
-
-# O podés usar el hash por defecto para "admin2024" y cambiarlo después:
-# $2y$10$EixZaYVK1fsbw1ZfbX3OXe.P0jFGnJvfMlL6qNvGkRKlX3cMfSm7u
+```env
+SCHEDULER_API_KEY=a7f3b9c2d1e8f4a6b3c9d2e1f8a4b6c7
+OPENWA_API_KEY=b8e4a0d3e2f9c5b7a4d0e3f2c9b5a7d8
+API_MASTER_KEY=b8e4a0d3e2f9c5b7a4d0e3f2c9b5a7d8
+OPENWA_SESSION_ID=b7f1a3d9-4c2e-8f6b-9a0d-1e3f5c7b9a2d
+N8N_WEBHOOK_TOKEN=c9f5b1e4d3a0c6b8e5f1d4a3b0c6e8f9
+N8N_OWNER_PHONE=5493826403110
+ADMIN_PASSWORD_HASH=$2y$10$EixZaYVK1fsbw1ZfbX3OXe.P0jFGnJvfMlL6qNvGkRKlX3cMfSm7u
+REDIS_PASSWORD=d0a6c2f5e4b1d7c9f6a2e5d4b1c7d9e0
+CORS_ORIGIN=http://192.168.18.11
 ```
+
+> **No copies las claves de arriba**, son de ejemplo. Usá las que generaste vos.
 
 ---
 
@@ -155,13 +209,17 @@ Credenciales del admin: usuario `admin`, password el que pusiste en `ADMIN_PASSW
 
 ## Paso 7 — Vincular WhatsApp
 
-1. Entrá a `http://192.168.18.11:2785` → OpenWA Dashboard
-2. Creá una nueva sesión con el `OPENWA_SESSION_ID` que pusiste en `.env`
-3. Escaneá el QR con tu WhatsApp
-4. Configurá el webhook en OpenWA:
+1. Entrá a `http://192.168.18.11:2785` → se abre el **Dashboard de OpenWA**
+2. Andá a **Sessions** y creá una sesión **nueva**
+3. En el campo **Session ID** poné el mismo `OPENWA_SESSION_ID` que generaste en el paso 2.2 (ej: `b7f1a3d9-4c2e-8f6b-9a0d-1e3f5c7b9a2d`)
+4. Poné **Start session** — va a aparecer un **código QR**
+5. Abrí WhatsApp en tu celular → **Dispositivos vinculados** → **Vincular un dispositivo**
+6. Escaneá el QR. Cuando conecte, el dashboard muestra "Connected"
+7. En el mismo dashboard, andá a **Webhooks** y configurá:
    - **URL**: `http://n8n:5678/webhook/whatsapp-inbound`
    - **Evento**: `message.received`
-   - **API Key**: la que pusiste en `OPENWA_API_KEY`
+   - **Header X-API-Key**: la misma clave que pusiste en `OPENWA_API_KEY`
+   - Guardá
 
 ---
 
