@@ -61,17 +61,14 @@ nano landing-salon/config.json     # lo mismo para el panel admin
 
 ---
 
-## Paso 4 — Construir imagen de OpenWA
-
-OpenWA necesita buildearse localmente (está en `openwa/`):
+## Paso 4 — Clonar y buildear OpenWA
 
 ```bash
-cd openwa
-docker build -t openwa-openwa:latest .
-cd ..
+chmod +x clone-openwa.sh
+./clone-openwa.sh
 ```
 
-> Esto tarda unos minutos, instala Chromium para Puppeteer.
+Esto clona el motor de WhatsApp desde GitHub y buildea la imagen Docker. Tarda unos minutos (instala Chromium).
 
 ---
 
