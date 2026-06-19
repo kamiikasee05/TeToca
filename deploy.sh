@@ -44,7 +44,7 @@ echo "  All required variables look valid."
 # --- Pull public images ---
 echo ""
 echo "[2/4] Pulling public images ..."
-docker compose $COMPOSE_ARGS pull landing n8n redis mailpit 2>&1 || echo "  WARNING: Some images may already be present locally (non-fatal)."
+docker compose $COMPOSE_ARGS pull landing n8n redis 2>&1 || echo "  WARNING: Some images may already be present locally (non-fatal)."
 
 # --- Start stack ---
 echo ""

@@ -104,15 +104,7 @@ services:
     networks:
       - stack
 
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: mailpit
-    restart: unless-stopped
-    # ports:
-    #   - "1025:1025"
-    #   - "8025:8025"
-    networks:
-      - stack
+
 
   openwa:
     image: docker.io/library/openwa-openwa:latest
