@@ -146,7 +146,15 @@
           "url": "http://scheduler:3000/api/v1/appointments?with=customer,service,provider",
           "authentication": "genericCredentialType",
           "options": {},
-          "genericAuthType": "httpBasicAuth"
+          "genericAuthType": "httpBasicAuth",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
         },
         "credentials": {
           "httpBasicAuth": {
@@ -203,7 +211,15 @@
           "url": "=http://scheduler:3000/api/v1/appointments/{{ $json.id }}",
           "authentication": "genericCredentialType",
           "options": {},
-          "genericAuthType": "httpBasicAuth"
+          "genericAuthType": "httpBasicAuth",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
         },
         "credentials": {
           "httpBasicAuth": {
@@ -228,7 +244,15 @@
           "sendQuery": true,
           "sendBody": false,
           "sendHeaders": false,
-          "options": {}
+          "options": {},
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
         }
       },
       {
@@ -247,7 +271,15 @@
           "sendQuery": true,
           "sendBody": false,
           "sendHeaders": false,
-          "options": {}
+          "options": {},
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
         }
       },
       {
