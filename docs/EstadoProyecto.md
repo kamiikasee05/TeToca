@@ -1,5 +1,36 @@
 # Estado del Proyecto
 
+## 18 Junio 2026 — Deploy fixes (WSL2/Windows) 🛠️
+
+**Hito:** Stack desplegado y operativo en entorno Windows/WSL2. Corregidos bugs de port binding, CRLF, API routing, env vars faltantes, y límites de upload. Commit `bdcae27`.
+
+**Fecha:** 18 Junio 2026
+**Fase:** ✅ Etapa 1-4. ⏳ Etapa 5 — Infraestructura productiva (solo si hay cliente que paga).
+
+### Stack actual
+| Service | Port | Status |
+|---|---|---|
+| Landing (Nginx + SPA) | :80 | ✅ — nginx proxies `/api/v1` → scheduler, `/admin` + `/api` → admin PHP |
+| Admin panel (PHP + GD) | :8081 | ✅ — upload 20M, logout confiable, saveConfig sin is_writable |
+| Scheduler API (Node + SQLite) | :3000 | ✅ — env vars completos (OPENWA_API_KEY, OPENWA_SESSION_ID) |
+| OpenWA (WhatsApp via Puppeteer) | :2785 (exposed) | ✅ connected |
+| n8n (workflow engine) | :5678 | ✅ 7 workflows end-to-end |
+| Redis | internal | ✅ |
+| Mailpit | internal | ✅ |
+
+### Fixes aplicados (commit bdcae27)
+- **Port binding WSL2:** binds cambiados de `127.0.0.1` a `0.0.0.0` en `docker-compose.prod.yml`
+- **CRLF + bcrypt quoting:** `setup.sh` wrappea valores .env en single quotes + `sed -i 's/\r$//'`
+- **API routing:** landing SPA cambió `localhost:3000` → `/api/v1` relativo; nginx.conf agregó `location /api/v1` proxy a `scheduler:3000` (antes del bloque `/api`)
+- **Scheduler env vars:** agregados `OPENWA_API_KEY` y `OPENWA_SESSION_ID` en docker-compose.yml
+- **saveConfig():** removido gate `is_writable()` (falsos negativos en Docker Windows), usa `@file_put_contents` directo
+- **logout.php:** cookie clear explícito + `session_destroy()` para logout confiable vía proxy nginx
+- **Dockerfile admin:** `upload_max_filesize` 2M→20M, `post_max_size` 8M→25M, `max_input_time` 15→60
+
+Ver [[Sesion-2026-06-18]] para detalle completo de los fixes.
+
+---
+
 ## 16 Junio 2026 — MVP COMPLETO (sesión de cierre) 🎉
 
 **Hito:** MVP 100% operativo. 7/7 workflows n8n funcionales end-to-end. Dashboard admin completo. Landing pública operativa. Auditoría de seguridad completada. Stack reducido y estabilizado.
@@ -7,7 +38,7 @@
 **Fecha:** 16 Junio 2026
 **Fase:** ✅ Etapa 1. ✅ Etapa 2. ✅ Etapa 3. ✅ Etapa 4. ⏳ Etapa 5 — Infraestructura productiva (solo si hay cliente que paga).
 
-### Stack final
+### Stack (16 Jun — pre-deploy fixes)
 | Service | Port | Status |
 |---|---|---|
 | Landing (Nginx + SPA) | :8080 | ✅ |
@@ -20,11 +51,12 @@
 
 ## Sesiones
 
-- [[Sesion-2026-06-12]] — Configuración inicial, documentación en Obsidian, setup del vault
-- [[Sesion-2026-06-13]] — Landing page, dashboard merge, estabilización de workflows, OpenWA webhooks
-- [[Sesion-2026-06-14]] — WF3/WF4 end-to-end debugging, PHP cancel relay, Docker Desktop estabilidad
-- [[Sesion-2026-06-15]] — n8n upgrade 1.92.0→2.26.3, EA+MySQL retirados, migración completada
+- [[Sesion-2026-06-18]] — Deploy fixes: WSL2 port binding, CRLF, API routing nginx, env vars, admin fixes (commit `bdcae27`)
 - [[Sesion-2026-06-16]] — Landing migration PHP→Nginx static, OpenWA session recovery, WhatsApp proxy vía scheduler, 7 workflows end-to-end, WF-3 v3 con LID breakthrough, dashboard completo, auditoría de seguridad final
+- [[Sesion-2026-06-15]] — n8n upgrade 1.92.0→2.26.3, EA+MySQL retirados, migración completada
+- [[Sesion-2026-06-14]] — WF3/WF4 end-to-end debugging, PHP cancel relay, Docker Desktop estabilidad
+- [[Sesion-2026-06-13]] — Landing page, dashboard merge, estabilización de workflows, OpenWA webhooks
+- [[Sesion-2026-06-12]] — Configuración inicial, documentación en Obsidian, setup del vault
 
 ## Barras de progreso
 

@@ -4,12 +4,8 @@ function authMiddleware(req, res, next) {
     { method: 'GET', pattern: /^\/api\/v1\/services\/?(\d+)?$/ },
     { method: 'GET', pattern: /^\/api\/v1\/slots/ },
     { method: 'GET', pattern: /^\/api\/v1\/availabilities/ },
-    { method: 'GET', pattern: /^\/api\/v1\/customers/ },
     { method: 'POST', pattern: /^\/api\/v1\/customers$/ },
-    { method: 'GET', pattern: /^\/api\/v1\/appointments/ },
     { method: 'POST', pattern: /^\/api\/v1\/appointments$/ },
-    { method: 'POST', pattern: /\/whatsapp\/send/ },
-    { method: 'GET', pattern: /^\/api\/v1\/appointments\/\d+\/cancel$/ },
   ];
 
   const isPublic = publicRoutes.some(r =>
@@ -21,7 +17,7 @@ function authMiddleware(req, res, next) {
 
   const apiKey = req.headers['x-api-key'];
   const match = apiKey && apiKey === expected;
-  console.log(`[auth] path=${req.path} method=${req.method} match=${match}`);
+  if (process.env.NODE_ENV !== 'production') console.log(`[auth] path=${req.path} method=${req.method} match=${match}`);
   if (match) return next();
 
   const auth = req.headers['authorization'];

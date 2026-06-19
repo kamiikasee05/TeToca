@@ -11,6 +11,8 @@ Ver archivo original: [[roadmap-etapas.md]]
 5. **Infraestructura productiva** — ⏳ Pendiente (solo si hay cliente que paga)
 
 > **16 Jun 2026 (sesión de cierre):** MVP 100% completado. Los 7 workflows n8n son funcionales end-to-end. Dashboard admin operativo con branding, services CRUD, y gestión de turnos. Stack final: Nginx :8080, PHP+GD :8081, Scheduler :3000, OpenWA :2785, n8n :5678. Auditoría de seguridad completada (🟡 MEDIUM RISK, 3 críticos pendientes para Etapa 5). WF-3 reconstruido como v3 con Code-based router tras el breakthrough del LID de WhatsApp Web.
+> 
+> **18 Jun 2026 (deploy fixes):** Stack desplegado en Windows/WSL2. Corregidos port binding (0.0.0.0), CRLF (.env quoting), API routing (nginx proxy `/api/v1`→scheduler), env vars faltantes, admin upload limits y logout. Commit `bdcae27`. Ver [[Sesion-2026-06-18]].
 
 ## Estado por etapa
 

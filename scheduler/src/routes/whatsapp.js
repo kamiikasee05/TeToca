@@ -54,8 +54,8 @@ function register(router) {
       });
     });
 
-    request.on('error', (err) => {
-      res.status(502).json({ success: false, error: err.message });
+    request.on('error', () => {
+      res.status(502).json({ success: false, message: 'Error al enviar mensaje' });
     });
 
     request.write(body);

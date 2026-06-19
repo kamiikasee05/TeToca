@@ -29,7 +29,7 @@ slots.register(api);
 whatsapp.register(api);
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', db: 'sqlite', provider: 5 });
+  res.json({ status: 'ok' });
 });
 
 getDb();

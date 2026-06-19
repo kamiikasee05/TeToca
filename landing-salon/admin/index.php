@@ -64,7 +64,7 @@ $attempts = [];
 if (file_exists($attemptsFile)) {
     $attempts = json_decode(file_get_contents($attemptsFile), true) ?: [];
 }
-$ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+$ip = $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 $now = time();
 $window = 900;
 $maxAttempts = 5;
@@ -801,6 +801,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // ===== TOAST =====
 function mostrarToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 2500); }
 
+// ===== SANITIZE =====
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
 // ===== MODAL =====
 function abrirModal(html) { document.getElementById('modalBody').innerHTML = html; document.getElementById('modalOverlay').classList.add('show'); }
 function cerrarModal() { document.getElementById('modalOverlay').classList.remove('show'); }
@@ -834,8 +837,8 @@ async function cargarDashboard() {
         proximos.slice(0,10).forEach(function(a) {
             var d = a.start.slice(0,10).split('-').reverse().join('/');
             var h = a.start.slice(11,16);
-            var c = a.customer ? a.customer.firstName + ' ' + a.customer.lastName : '—';
-            var s = a.service ? a.service.name : '—';
+            var c = a.customer ? esc(a.customer.firstName) + ' ' + esc(a.customer.lastName) : '—';
+            var s = a.service ? esc(a.service.name) : '—';
             var p = a.service ? '$' + Number(a.service.price).toLocaleString('es-AR') : '—';
             html += '<tr><td>' + d + '</td><td><strong>' + h + '</strong></td><td>' + c + '</td><td style="color:#888;font-size:13px;">' + s + '</td><td class="precio">' + p + '</td></tr>';
         });
@@ -857,7 +860,7 @@ async function cargarServicios() {
         allServices = data;
         data.forEach(function(s) {
             var tr = document.createElement('tr');
-            tr.innerHTML = '<td><strong>' + s.name + '</strong></td><td style="color:#888;font-size:13px;">' + (s.description||'-') + '</td><td class="duracion">' + s.duration + ' min</td><td class="precio">$' + Number(s.price).toLocaleString('es-AR') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editarServicio(' + s.id + ')">Editar</button> <button class="btn btn-danger btn-sm" onclick="eliminarServicio(' + s.id + ')">Eliminar</button></td>';
+            tr.innerHTML = '<td><strong>' + esc(s.name) + '</strong></td><td style="color:#888;font-size:13px;">' + esc(s.description||'-') + '</td><td class="duracion">' + s.duration + ' min</td><td class="precio">$' + Number(s.price).toLocaleString('es-AR') + '</td><td class="actions"><button class="btn btn-ghost btn-sm" onclick="editarServicio(' + s.id + ')">Editar</button> <button class="btn btn-danger btn-sm" onclick="eliminarServicio(' + s.id + ')">Eliminar</button></td>';
             tbody.appendChild(tr);
         });
     } catch(e) {}
@@ -1004,7 +1007,7 @@ async function renderCalendario() {
         if (dayMap[dateStr]) {
             dayMap[dateStr].forEach(function(a) {
                 var time = a.start.slice(11,16);
-                var name = a.customer ? a.customer.firstName : '?';
+                var name = a.customer ? esc(a.customer.firstName) : '?';
                 var status = a.status || 'confirmed';
                 html += '<div class="cal-appt ' + status + '" onclick="event.stopPropagation();abrirModalTurno(' + a.id + ')"><span class="cal-time">' + time + '</span> ' + name + '</div>';
             });
@@ -1037,12 +1040,12 @@ async function abrirModalTurno(id) {
     var precio = s.price ? '$' + Number(s.price).toLocaleString('es-AR') : '—';
 
     var html = '<h2>Detalle del turno</h2>' +
-        '<div class="detail-row"><span class="icon">👤</span><span class="val"><strong>' + (c.firstName||'?') + ' ' + (c.lastName||'') + '</strong></span></div>' +
-        '<div class="detail-row"><span class="icon">📞</span><span class="val">' + (c.phone||'—') + '</span></div>' +
-        '<div class="detail-row"><span class="icon">✉️</span><span class="val">' + (c.email||'—') + '</span></div>' +
+        '<div class="detail-row"><span class="icon">👤</span><span class="val"><strong>' + esc(c.firstName) + ' ' + esc(c.lastName) + '</strong></span></div>' +
+        '<div class="detail-row"><span class="icon">📞</span><span class="val">' + esc(c.phone||'—') + '</span></div>' +
+        '<div class="detail-row"><span class="icon">✉️</span><span class="val">' + esc(c.email||'—') + '</span></div>' +
         '<div style="height:1px;background:#f0ebe7;margin:12px 0;"></div>' +
-        '<div class="detail-row"><span class="icon">💅</span><span class="val">' + (s.name||'—') + '</span></div>' +
-        '<div class="detail-row"><span class="icon">⏱️</span><span class="val">' + horaStr + ' (' + (s.duration||'?') + ' min)</span></div>' +
+        '<div class="detail-row"><span class="icon">💅</span><span class="val">' + esc(s.name||'—') + '</span></div>' +
+        '<div class="detail-row"><span class="icon">⏱️</span><span class="val">' + horaStr + ' (' + esc(s.duration||'?') + ' min)</span></div>' +
         '<div class="detail-row"><span class="icon">💰</span><span class="val">' + precio + '</span></div>' +
         '<div class="detail-row"><span class="icon">📅</span><span class="val" style="text-transform:capitalize;">' + fechaStr + '</span></div>' +
         '<div class="detail-row"><span class="icon">🏷️</span><span class="val"><span class="status-badge ' + status + '">' + statusLabel + '</span></span></div>';
@@ -1187,9 +1190,9 @@ function filtrarTurnos() {
     list.forEach(function(a) {
         var d = a.start.slice(0,10).split('-').reverse().join('/');
         var h = a.start.slice(11,16) + ' - ' + a.end.slice(11,16);
-        var c = a.customer ? a.customer.firstName + ' ' + (a.customer.lastName||'') : '—';
-        var tel = a.customer ? a.customer.phone||'' : '';
-        var s = a.service ? a.service.name : '—';
+        var c = a.customer ? esc(a.customer.firstName) + ' ' + esc(a.customer.lastName) : '—';
+        var tel = a.customer ? esc(a.customer.phone) : '';
+        var s = a.service ? esc(a.service.name) : '—';
         var p = a.service ? '$' + Number(a.service.price).toLocaleString('es-AR') : '—';
         var est = a.status || 'confirmed';
         var estLabel = est === 'confirmed' ? 'Confirmado' : 'Cancelado';

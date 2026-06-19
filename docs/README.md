@@ -9,7 +9,7 @@ Sistema de turnos online para pequeños negocios en ciudades intermedias de Arge
 | Motor de reservas | [[TuAhoraScheduler]] (Node + SQLite) | ✅ Reemplazó EasyAppointments + MySQL |
 | WhatsApp | [[OpenWA]] (Node.js) | Bot, puerto 2785 |
 | Orquestación | [[n8n]] | v2.26.3, workflows, puerto 5678 |
-| Landing | Nginx + vanilla JS SPA | Puerto :8080, llama a Scheduler API |
+| Landing | Nginx + vanilla JS SPA | Puerto :80, reverse proxy → scheduler + admin |
 | Admin panel | PHP | Puerto :8081, separado de landing |
 | Cola de mensajes | Redis 7 | En Docker |
 | Email (dev) | Mailpit | En Docker |
@@ -47,11 +47,12 @@ Sistema de turnos online para pequeños negocios en ciudades intermedias de Arge
 
 ## Sesiones
 
-- [[Sesion-2026-06-12]] — Setup inicial, Obsidian vault
-- [[Sesion-2026-06-13]] — Landing, dashboard unificado, estabilización WFs
-- [[Sesion-2026-06-14]] — WF3/WF4 debugging end-to-end, PHP cancel relay
-- [[Sesion-2026-06-15]] — n8n upgrade, EA+MySQL retirados, migración completada
+- [[Sesion-2026-06-18]] — Deploy fixes: WSL2, CRLF, nginx routing, env vars, admin
 - [[Sesion-2026-06-16]] — Landing PHP→Nginx static, WhatsApp proxy, OpenWA session recovery
+- [[Sesion-2026-06-15]] — n8n upgrade, EA+MySQL retirados, migración completada
+- [[Sesion-2026-06-14]] — WF3/WF4 debugging end-to-end, PHP cancel relay
+- [[Sesion-2026-06-13]] — Landing, dashboard unificado, estabilización WFs
+- [[Sesion-2026-06-12]] — Setup inicial, Obsidian vault
 
 ## Desarrollo
 

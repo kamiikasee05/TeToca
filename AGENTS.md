@@ -74,7 +74,7 @@ Before starting any task, check `docs/` for existing context. After completing a
 - **Branding config sync**: `admin/save-branding.php` escribe a `landing-salon/config.json` (admin) Y `landing/config.json` (landing pública, password stripped).
 - **Services CRUD**: create/read/update/delete vía scheduler API.
 - **Appointments management**: view/edit/delete desde dashboard.
-- **Credentials**: `admin` / `admin2024`.
+- **Credentials**: configuradas vía `.env` (hash bcrypt).
 
 #### Landing pública (Nginx + vanilla JS SPA, puerto :8080)
 - Formulario de reserva 3 pasos: servicio → fecha/hora → datos.
@@ -82,9 +82,9 @@ Before starting any task, check `docs/` for existing context. After completing a
 - Llama directo a scheduler API (`POST /customers`, `POST /appointments`).
 
 #### OpenWA — WhatsApp via Puppeteer
-- Session ID: `5d81145b-eb81-4fb9-82e3-ab1b1ed5ad6d`
-- Phone: `5493826403110`
-- API Key: `dev-admin-key`
+- Session ID: configurada vía `.env` (`OPENWA_SESSION_ID`)
+- Phone: configurado vía `.env` (`N8N_OWNER_PHONE`)
+- API Key: configurada vía `.env` (`OPENWA_API_KEY`)
 - **Lección clave**: WhatsApp Web vinculado reporta `from` como LID (`XXXXXXXXX@lid`), NO como número de teléfono. No se puede buscar clientes por `from` en dispositivos vinculados.
 - **Webhooks configurados**: evento `message.received` (no `message` ni `message.create`).
 - **Sesión**: persiste en volumen `openwa_data`. Reconexión sin QR si sesión válida. Si se corrompe (WSL restart → `SingletonLock`), eliminar `/app/data/sessions/session-tuahora/` y recrear.
@@ -121,9 +121,7 @@ Before starting any task, check `docs/` for existing context. After completing a
 | Mailpit | internal | ✅ |
 
 ### OpenWA session
-- Session ID: `5d81145b-eb81-4fb9-82e3-ab1b1ed5ad6d`
-- Phone: `5493826403110`
-- API Key: `dev-admin-key`
+- Configurada vía `.env`
 
 ### WF-RT: Confirmación en tiempo real
 1. Webhook `appointment-created` — scheduler fires POST to `n8n:5678/webhook/appointment-created`
@@ -139,3 +137,27 @@ Before starting any task, check `docs/` for existing context. After completing a
 - **Cancel message cleanup**: Removed redundant text from WF-5 cancel notification. Now says "Reserva un nuevo turno desde la web." instead of two redundant sentences.
 - **WF-3 hash-based cancel → simplified**: Removed hash requirement. User just types CANCELAR. Workflow searches ALL active confirmed appointments, if exactly 1 → cancels directly. If 2+ → sends numbered list.
 - **Key discovery**: WhatsApp Web linked devices use LID (`300815528157@lid`) not phone numbers in `from` field. Customer search by phone impossible. Solution: search all appointments, cancel by count.
+
+### Deploy fixes — 2026-06-18 (commit `bdcae27`)
+
+Desplegado en entorno Windows/WSL2. Fixes aplicados:
+- **Port binding WSL2**: binds cambiados `127.0.0.1` → `0.0.0.0` en `docker-compose.prod.yml` (WSL2 falla con 127.0.0.1 en arranque simultáneo)
+- **CRLF + bcrypt quoting**: `setup.sh` wrappea valores .env en single quotes + `sed -i 's/\r$//'` (CRLF de git Windows rompe `source .env`; `$2y$...` de bcrypt interpretado como variable bash)
+- **API routing**: landing SPA cambió `http://localhost:3000/api/v1` → `/api/v1` relativo; nginx.conf agregó `location /api/v1` proxy a `scheduler:3000` (debe ir ANTES del bloque `/api`)
+- **Scheduler env vars**: faltaban `OPENWA_API_KEY` y `OPENWA_SESSION_ID` en docker-compose.yml (causaba FATAL al iniciar)
+- **saveConfig()**: removido `is_writable()` gate (falsos negativos en Docker Windows), usa `@file_put_contents` directo
+- **logout.php**: cookie clear explícito + session_destroy para logout confiable vía proxy nginx
+- **Dockerfile admin**: upload 2M→20M, post 8M→25M, input_time 15→60
+
+### Current stack (post-deploy fixes)
+| Service | Port | Status |
+|---|---|---|
+| Landing (Nginx + SPA) | :80 | ✅ — nginx reverse proxy: `/api/v1`→scheduler, `/admin`+`/api`→admin PHP |
+| Admin panel (PHP + GD) | :8081 | ✅ — upload 20M, logout confiable, saveConfig robusto |
+| Scheduler API | :3000 | ✅ — env vars completos |
+| OpenWA (WhatsApp) | :2785 (exposed) | ✅ connected |
+| n8n | :5678 | ✅ 7 workflows — MVP COMPLETO |
+| Redis | internal | ✅ |
+| Mailpit | internal | ✅ |
+
+**Ver [[Sesion-2026-06-18]] para detalle completo.**

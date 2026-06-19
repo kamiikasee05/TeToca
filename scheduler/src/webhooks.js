@@ -8,10 +8,14 @@ function fire(event, payload) {
   const url = `${N8N_WEBHOOK_URL.replace(/\/+$/, '')}/${event}`;
   const body = JSON.stringify({ event, ...payload });
   const client = url.startsWith('https') ? https : http;
+  const headers = { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) };
+  if (process.env.N8N_WEBHOOK_TOKEN) {
+    headers['X-Webhook-Token'] = process.env.N8N_WEBHOOK_TOKEN;
+  }
   try {
     const req = client.request(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      headers,
       timeout: 3000,
     });
     req.write(body);
