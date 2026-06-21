@@ -109,15 +109,24 @@ function register(router) {
         `👩‍🎨 Profesional: ${prov.profesional || prov.firstName || ''}\n` +
         `📍 ${prov.address || 'Mitre 456, Chamical'}\n\n` +
         `Para cancelar, respondé CANCELAR a este mensaje.`;
-      const http = require('http');
-      const waBody = JSON.stringify({ phone, message: msg });
-      const waOpts = { hostname: 'localhost', port: process.env.PORT || 3000, path: '/api/v1/whatsapp/send', method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.API_KEY || '', 'Content-Length': Buffer.byteLength(waBody) } };
-      const waReq = http.request(waOpts, (res) => {
-        let d = ''; res.on('data', c => d += c); res.on('end', () => console.log('[appt] WA proxy status:', res.statusCode, d.substring(0, 100)));
-      });
-      waReq.on('error', e => console.error('[appt] WA error:', e.message));
-      waReq.write(waBody); waReq.end();
+      // Direct OpenWA call (avoid proxy loopback + auth middleware)
+      const waOpenwa = process.env.OPENWA_HOST || 'tetoca_openwa';
+      const waPort = process.env.OPENWA_PORT || 2785;
+      const waSession = process.env.OPENWA_SESSION_ID;
+      const waApiKey = process.env.OPENWA_API_KEY;
+      if (waSession && waApiKey) {
+        const { exec } = require('child_process');
+        const fs = require('fs');
+        const os = require('os');
+        const chatId = phone.includes('@c.us') ? phone : phone + '@c.us';
+        const body = JSON.stringify({ chatId, text: msg });
+        const tmpFile = os.tmpdir() + '/wa-' + Date.now() + '.json';
+        fs.writeFileSync(tmpFile, body);
+        exec(`curl -s -X POST http://${waOpenwa}:${waPort}/sessions/${waSession}/messages/send-text -H 'Content-Type: application/json' -H 'X-API-Key: ${waApiKey}' --data-binary @${tmpFile}`, { timeout: 15000 }, (err, stdout) => {
+          fs.unlinkSync(tmpFile);
+          if (!err) console.log('[appt] WA sent:', stdout.substring(0, 80));
+        });
+      }
     }
 
     res.status(201).json({

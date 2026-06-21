@@ -25,9 +25,12 @@ services:
       API_KEY: ${SCHEDULER_API_KEY}
       OPENWA_API_KEY: ${OPENWA_API_KEY}
       OPENWA_SESSION_ID: ${OPENWA_SESSION_ID}
+      NODE_OPTIONS: --dns-result-order=ipv4first
       N8N_WEBHOOK_URL: http://n8n:5678/webhook/
     depends_on:
       n8n:
+        condition: service_started
+      openwa:
         condition: service_started
     networks:
       - stack
