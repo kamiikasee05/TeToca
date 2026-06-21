@@ -42,7 +42,6 @@ services:
       - ./landing/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./landing/config.json:/usr/share/nginx/html/config.json
       - ./landing-salon/uploads:/usr/share/nginx/html/uploads
-      - ./landing-salon:/var/www/admin-files
     networks:
       - stack
 
@@ -52,6 +51,8 @@ services:
       dockerfile: Dockerfile
     container_name: landing-admin
     restart: unless-stopped
+    ports:
+      - "8081:8080"
     volumes:
       - ./landing-salon:/var/www/html
       - ./landing/config.json:/var/www/landing-config.json
