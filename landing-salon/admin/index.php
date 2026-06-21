@@ -54,7 +54,7 @@ $isLoggedIn = ($_SESSION['tetoca_admin'] ?? false) === true;
 
 if (isset($_GET['logout'])) {
     session_destroy();
-    header('Location: /admin/index.php');
+    header('Location: /admin//admin/index.php');
     exit;
 }
 
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             file_put_contents($attemptsFile, json_encode($attempts));
             $_SESSION['tetoca_admin'] = true;
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-            header('Location: /admin/index.php');
+            header('Location: /admin//admin/index.php');
             exit;
         }
         $attempts[$ip][] = $now;
@@ -478,7 +478,7 @@ textarea { resize:vertical; min-height:60px; }
 <?php else: ?>
 <header>
     <h1 id="header-title">TeToca · Dashboard</h1>
-    <a href="logout.php">Cerrar sesión</a>
+    <a href="/admin/logout.php">Cerrar sesión</a>
 </header>
 
 <div class="tabs" id="tabNav">
@@ -1259,7 +1259,7 @@ function guardarMarca() {
     var fd = new FormData(form);
     fd.append('action', 'save_brand');
     fd.append('csrf_token', CSRF_TOKEN);
-    fetch('index.php', { method: 'POST', body: fd })
+    fetch('/admin/index.php', { method: 'POST', body: fd })
         .then(function(r) { return r.text(); })
         .then(function(text) {
             var d;
@@ -1307,7 +1307,7 @@ if (formColores) {
         var fd = new FormData(this);
         fd.append('action', 'save_colors');
         fd.append('csrf_token', CSRF_TOKEN);
-        fetch('index.php', { method: 'POST', body: fd })
+        fetch('/admin/index.php', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(d) { mostrarToast(d.success ? 'Colores guardados' : ('Error: ' + (d.error || 'desconocido'))); })
             .catch(function() { mostrarToast('Error de conexión'); });
@@ -1328,7 +1328,7 @@ if (formColores) {
             fd.append('action', 'upload_logo');
             fd.append('csrf_token', CSRF_TOKEN);
             fd.append('logo', file);
-            fetch('index.php', { method: 'POST', body: fd })
+            fetch('/admin/index.php', { method: 'POST', body: fd })
                 .then(function(r) { return r.json(); })
                 .then(function(d) {
                     if (d.error) { mostrarToast('Error: ' + d.error); return; }
@@ -1359,7 +1359,7 @@ if (formColores) {
         var fd = new FormData();
         fd.append('action', 'delete_logo');
         fd.append('csrf_token', CSRF_TOKEN);
-        fetch('index.php', { method: 'POST', body: fd })
+        fetch('/admin/index.php', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(d) {
                 if (d.error) { mostrarToast('Error: ' + d.error); return; }
@@ -1407,7 +1407,7 @@ if (formColores) {
         fd.append('action', 'delete_gallery');
         fd.append('csrf_token', CSRF_TOKEN);
         fd.append('filename', filename);
-        fetch('index.php', { method: 'POST', body: fd })
+        fetch('/admin/index.php', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(d) {
                 if (d.error) { mostrarToast('Error: ' + d.error); return; }
@@ -1435,7 +1435,7 @@ if (formColores) {
         valid.forEach(function(f) { fd.append('images[]', f); });
 
         mostrarToast('Subiendo ' + valid.length + ' imagen(es)...');
-        fetch('index.php', { method: 'POST', body: fd })
+        fetch('/admin/index.php', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(d) {
                 if (d.error) { mostrarToast('Error: ' + d.error); return; }
