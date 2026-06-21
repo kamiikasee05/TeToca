@@ -63,7 +63,6 @@ services:
       OPENWA_SESSION_ID: ${OPENWA_SESSION_ID}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
-      PHP_CLI_SERVER_WORKERS: 8
     networks:
       - stack
 
