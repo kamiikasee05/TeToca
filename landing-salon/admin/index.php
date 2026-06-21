@@ -600,8 +600,8 @@ textarea { resize:vertical; min-height:60px; }
             <input type="text" id="clientSearch" placeholder="Buscar por nombre o teléfono...">
         </div>
         <table id="tabla-clientes">
-            <thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Turnos</th></tr></thead>
-            <tbody id="tbody-clientes"><tr><td colspan="4" style="text-align:center;color:#999;padding:32px;">Cargando...</td></tr></tbody>
+            <thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Turnos</th><th></th></tr></thead>
+            <tbody id="tbody-clientes"><tr><td colspan="5" style="text-align:center;color:#999;padding:32px;">Cargando...</td></tr></tbody>
         </table>
     </div>
 </div>
@@ -917,7 +917,8 @@ async function cargarClientes() {
             tr.innerHTML = '<td><strong>' + nombre + '</strong></td>' +
                 '<td>' + tel + '</td>' +
                 '<td>' + email + '</td>' +
-                '<td>' + count + '</td>';
+                '<td>' + count + '</td>' +
+                '<td>' + (count === 0 ? '<button class="btn btn-danger btn-sm" onclick="eliminarCliente(' + c.id + ')">Eliminar</button>' : '') + '</td>';
             tbody.appendChild(tr);
         });
     } catch(e) {
@@ -925,6 +926,15 @@ async function cargarClientes() {
     }
 }
 document.getElementById('clientSearch').addEventListener('input', cargarClientes);
+
+async function eliminarCliente(id) {
+    if (!confirm('¿Eliminar este cliente?')) return;
+    var res = await fetch(CLIENTES_API + '?id=' + id, {method:'DELETE'});
+    var data = await res.json();
+    if (!res.ok) { mostrarToast('Error: ' + (data.error || 'desconocido')); return; }
+    mostrarToast('Cliente eliminado');
+    cargarClientes();
+}
 
 document.getElementById('form-servicio').addEventListener('submit', async function(e) {
     e.preventDefault();
