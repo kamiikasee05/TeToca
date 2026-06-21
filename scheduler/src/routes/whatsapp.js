@@ -1,6 +1,6 @@
 const http = require('http');
 
-const OPENWA_HOST = process.env.OPENWA_HOST || 'openwa';
+const OPENWA_HOST = process.env.OPENWA_HOST || 'tetoca_openwa';
 const OPENWA_PORT = process.env.OPENWA_PORT || 2785;
 const OPENWA_API_KEY = process.env.OPENWA_API_KEY;
 const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID;
@@ -15,7 +15,7 @@ if (!OPENWA_SESSION_ID) {
 function register(router) {
   const handler = (req, res) => {
     if (!OPENWA_API_KEY || !OPENWA_SESSION_ID) {
-      return res.status(500).json({ success: false, message: 'WhatsApp no configurado (faltan variables de entorno)' });
+      return res.status(500).json({ success: false, message: 'WhatsApp no configurado' });
     }
     const phone = req.body?.phone || req.query?.phone;
     const message = req.body?.message || req.query?.message;
@@ -23,44 +23,30 @@ function register(router) {
       return res.status(400).json({ success: false, message: 'phone y message requeridos' });
     }
     if (message.length > 4096) {
-      return res.status(400).json({ success: false, message: 'El mensaje excede el límite de 4096 caracteres de WhatsApp' });
+      return res.status(400).json({ success: false, message: 'Mensaje excede 4096 chars' });
     }
 
-    const body = JSON.stringify({
-      chatId: phone.includes('@c.us') ? phone : phone + '@c.us',
-      text: message
-    });
+    // ponytail: node http module in slim images doesn't route to OpenWA correctly; use curl
+    const { exec } = require('child_process');
+    const fs = require('fs');
+    const os = require('os');
+    const chatId = phone.includes('@c.us') ? phone : phone + '@c.us';
+    
+    const tmpFile = os.tmpdir() + '/wa-' + Date.now() + '.json';
+    fs.writeFileSync(tmpFile, JSON.stringify({ chatId, text: message }));
+    const cmd = `curl -s -X POST http://${OPENWA_HOST}:${OPENWA_PORT}/sessions/${OPENWA_SESSION_ID}/messages/send-text -H 'Content-Type: application/json' -H 'X-API-Key: ${OPENWA_API_KEY}' --data-binary @${tmpFile}`;
 
-    const options = {
-      hostname: OPENWA_HOST,
-      port: OPENWA_PORT,
-      path: `/sessions/${OPENWA_SESSION_ID}/messages/send-text`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': OPENWA_API_KEY,
-        'Content-Length': Buffer.byteLength(body)
+    exec(cmd, { timeout: 15000 }, (err, stdout) => {
+      fs.unlinkSync(tmpFile);
+      if (err) return res.status(502).json({ success: false, message: 'Error al enviar mensaje' });
+      try {
+        const data = JSON.parse(stdout);
+        const success = !!data.messageId;
+        res.status(success ? 201 : 500).json({ success, statusCode: success ? 201 : 500, response: stdout });
+      } catch {
+        res.status(502).json({ success: false, message: 'Error al enviar mensaje' });
       }
-    };
-
-    const request = http.request(options, (openwaRes) => {
-      let data = '';
-      openwaRes.on('data', (chunk) => data += chunk);
-      openwaRes.on('end', () => {
-        res.status(openwaRes.statusCode).json({
-          success: openwaRes.statusCode >= 200 && openwaRes.statusCode < 300,
-          statusCode: openwaRes.statusCode,
-          response: data
-        });
-      });
     });
-
-    request.on('error', () => {
-      res.status(502).json({ success: false, message: 'Error al enviar mensaje' });
-    });
-
-    request.write(body);
-    request.end();
   };
 
   router.post('/whatsapp/send', handler);

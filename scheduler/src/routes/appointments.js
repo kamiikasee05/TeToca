@@ -113,7 +113,11 @@ function register(router) {
       const waBody = JSON.stringify({ phone, message: msg });
       const waOpts = { hostname: 'localhost', port: process.env.PORT || 3000, path: '/api/v1/whatsapp/send', method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.API_KEY || '', 'Content-Length': Buffer.byteLength(waBody) } };
-      try { const waReq = http.request(waOpts); waReq.write(waBody); waReq.end(); } catch(e) {}
+      const waReq = http.request(waOpts, (res) => {
+        let d = ''; res.on('data', c => d += c); res.on('end', () => console.log('[appt] WA proxy status:', res.statusCode, d.substring(0, 100)));
+      });
+      waReq.on('error', e => console.error('[appt] WA error:', e.message));
+      waReq.write(waBody); waReq.end();
     }
 
     res.status(201).json({
