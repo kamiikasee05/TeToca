@@ -13,11 +13,12 @@ if (!OPENWA_SESSION_ID) {
 }
 
 function register(router) {
-  router.post('/whatsapp/send', (req, res) => {
+  const handler = (req, res) => {
     if (!OPENWA_API_KEY || !OPENWA_SESSION_ID) {
       return res.status(500).json({ success: false, message: 'WhatsApp no configurado (faltan variables de entorno)' });
     }
-    const { phone, message } = req.body || {};
+    const phone = req.body?.phone || req.query?.phone;
+    const message = req.body?.message || req.query?.message;
     if (!phone || !message) {
       return res.status(400).json({ success: false, message: 'phone y message requeridos' });
     }
@@ -60,7 +61,10 @@ function register(router) {
 
     request.write(body);
     request.end();
-  });
+  };
+
+  router.post('/whatsapp/send', handler);
+  router.get('/whatsapp/send', handler);
 }
 
 module.exports = { register };
