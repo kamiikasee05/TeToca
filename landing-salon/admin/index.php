@@ -54,7 +54,7 @@ $isLoggedIn = ($_SESSION['tetoca_admin'] ?? false) === true;
 
 if (isset($_GET['logout'])) {
     session_destroy();
-    header('Location: index.php');
+    header('Location: /admin/index.php');
     exit;
 }
 
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             file_put_contents($attemptsFile, json_encode($attempts));
             $_SESSION['tetoca_admin'] = true;
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-            header('Location: index.php');
+            header('Location: /admin/index.php');
             exit;
         }
         $attempts[$ip][] = $now;
