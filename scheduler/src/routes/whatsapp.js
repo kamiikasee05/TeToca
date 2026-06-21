@@ -67,4 +67,13 @@ function register(router) {
   router.get('/whatsapp/send', handler);
 }
 
-module.exports = { register };
+function sendWhatsApp(phone, message) {
+  if (!OPENWA_API_KEY || !OPENWA_SESSION_ID) return;
+  if (!phone || !message) return;
+  const body = JSON.stringify({ chatId: phone.includes('@c.us') ? phone : phone + '@c.us', text: message });
+  const opts = { hostname: OPENWA_HOST, port: OPENWA_PORT, path: `/api/sessions/${OPENWA_SESSION_ID}/messages/send-text`, method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': OPENWA_API_KEY, 'Content-Length': Buffer.byteLength(body) } };
+  try { const r = http.request(opts); r.write(body); r.end(); } catch {}
+}
+
+module.exports = { register, sendWhatsApp };

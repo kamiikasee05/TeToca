@@ -1,15 +1,6 @@
 const { getDb } = require('../db');
 const webhooks = require('../webhooks');
-const http = require('http');
-
-function notifyWhatsApp(phone, message) {
-  if (!phone || !message) return;
-  const KEY = process.env.API_KEY || '';
-  const body = JSON.stringify({ phone, message });
-  const opts = { hostname: 'localhost', port: process.env.PORT || 3000, path: '/api/v1/whatsapp/send', method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'x-api-key': KEY } };
-  try { const r = http.request(opts); r.write(body); r.end(); } catch {}
-}
+const { sendWhatsApp } = require('./whatsapp');
 
 function register(router) {
   router.get('/appointments', (req, res) => {
@@ -119,7 +110,7 @@ function register(router) {
         `👩‍🎨 Profesional: ${prov.profesional || prov.firstName || ''}\n` +
         `📍 ${prov.address || 'Mitre 456, Chamical'}\n\n` +
         `Para cancelar, respondé CANCELAR a este mensaje.`;
-      notifyWhatsApp(phone, msg);
+      sendWhatsApp(phone, msg);
     }
 
     res.status(201).json({
