@@ -1,9 +1,8 @@
 [{
-  "name": "WF-5: Notificación cancelación",
+  "name": "WF-5: Notificacion cancelacion",
   "nodes": [
     {
       "parameters": { "httpMethod": "POST", "path": "appointment-cancelled", "responseMode": "lastNode", "options": {} },
-      "id": "wf5-webhook",
       "name": "Webhook appointment-cancelled",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
@@ -14,7 +13,6 @@
       "parameters": {
         "jsCode": "const raw = $input.first().json;\nconst a = raw.body || raw;\nvar phone = (a.customer?.phone || '').replace(/\\+/g, '').replace(/ /g, '');\nif (phone && !phone.startsWith('549') && !phone.startsWith('54') && phone.length <= 11) {\n  phone = '549' + phone;\n}\nreturn [{\n  json: {\n    clientName: (a.customer?.firstName || '') + ' ' + (a.customer?.lastName || ''),\n    phone: phone,\n    service: a.service?.name || '',\n    date: (a.start || '').split(' ')[0],\n    time: ((a.start || '').split(' ')[1] || '').substring(0, 5)\n  }\n}];"
       },
-      "id": "wf5-extract",
       "name": "Extraer datos",
       "type": "n8n-nodes-base.code",
       "typeVersion": 1,
@@ -23,7 +21,6 @@
     {
       "parameters": {
         "url": "={{ 'http://scheduler:3000/api/v1/whatsapp/send?phone=' + encodeURIComponent($json.phone) + '&message=' + encodeURIComponent('Hola ' + $json.clientName + ', tu turno del ' + $json.date + ' a las ' + $json.time + ' (' + $json.service + ') fue cancelado. Reserva un nuevo turno desde nuestra web.') }}",
-        "authentication": "none",
         "method": "GET",
         "sendQuery": true,
         "sendBody": false,
@@ -31,10 +28,9 @@
         "headerParameters": { "parameters": [{"name": "x-api-key", "value": "={{ $env.SCHEDULER_API_KEY }}"}] },
         "options": {}
       },
-      "id": "wf5-send",
       "name": "Enviar WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
+      "typeVersion": 4.2,
       "position": [650, 300]
     }
   ],
@@ -42,5 +38,5 @@
     "Webhook appointment-cancelled": { "main": [[{ "node": "Extraer datos", "type": "main", "index": 0 }]] },
     "Extraer datos": { "main": [[{ "node": "Enviar WhatsApp", "type": "main", "index": 0 }]] }
   },
-  "settings": { "executionOrder": "v1", "availableInMCP": true }
+  "settings": { "executionOrder": "v1" }
 }]
