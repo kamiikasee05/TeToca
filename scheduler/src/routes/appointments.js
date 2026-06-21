@@ -115,7 +115,6 @@ function register(router) {
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.API_KEY || '', 'Content-Length': Buffer.byteLength(waBody) } };
       try { const waReq = http.request(waOpts); waReq.write(waBody); waReq.end(); } catch(e) {}
     }
-    }
 
     res.status(201).json({
       id: row.id, start: row.start, end: row.end,
