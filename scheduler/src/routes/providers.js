@@ -38,9 +38,11 @@ function register(router) {
 
     db.prepare(`
       UPDATE provider_settings SET first_name=?, last_name=?, email=?, phone=?, timezone=?,
-        working_plan=?, username=?, notifications=?, calendar_view=?
+        working_plan=?, username=?, notifications=?, calendar_view=?,
+        profesional=COALESCE(NULLIF(?, ''), profesional), address=COALESCE(NULLIF(?, ''), address)
       WHERE provider_id=?
-    `).run(firstName, lastName, email, phone, timezone, workingPlan, username, notifications, calendarView, +req.params.id);
+    `).run(firstName, lastName, email, phone, timezone, workingPlan, username, notifications, calendarView,
+      d.profesional || '', d.address || '', +req.params.id);
 
     const row = db.prepare('SELECT * FROM provider_settings WHERE provider_id = ?').get(+req.params.id);
     res.json(mapProvider(row));
@@ -63,6 +65,8 @@ function mapProvider(r) {
       notifications: !!r.notifications,
       calendarView: r.calendar_view,
     },
+    profesional: r.profesional || '',
+    address: r.address || '',
   };
 }
 

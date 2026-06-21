@@ -487,6 +487,7 @@ textarea { resize:vertical; min-height:60px; }
     <button class="tab-btn" data-tab="horarios">Horarios</button>
     <button class="tab-btn" data-tab="calendario">Calendario</button>
     <button class="tab-btn" data-tab="turnos">Turnos</button>
+    <button class="tab-btn" data-tab="clientes">Clientes</button>
     <button class="tab-btn" data-tab="whatsapp">WhatsApp</button>
     <button class="tab-btn" data-tab="marca">Marca</button>
     <button class="tab-btn" data-tab="logo">Logo</button>
@@ -588,6 +589,20 @@ textarea { resize:vertical; min-height:60px; }
             </select>
         </div>
         <div id="turnosContainer"><div class="empty-state">Cargando turnos...</div></div>
+    </div>
+</div>
+
+<!-- TAB: Clientes -->
+<div id="tab-clientes" class="tab-content">
+    <div class="card">
+        <h2>Clientes</h2>
+        <div class="search-bar">
+            <input type="text" id="clientSearch" placeholder="Buscar por nombre o teléfono...">
+        </div>
+        <table id="tabla-clientes">
+            <thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Turnos</th></tr></thead>
+            <tbody id="tbody-clientes"><tr><td colspan="4" style="text-align:center;color:#999;padding:32px;">Cargando...</td></tr></tbody>
+        </table>
     </div>
 </div>
 
@@ -764,6 +779,7 @@ const CSRF_TOKEN = '<?= $_SESSION['csrf_token'] ?? '' ?>';
 const API = '../api/admin-servicios.php';
 const WP_API = '../api/horarios-admin.php';
 const TURNOS_API = '../api/turnos-admin.php';
+const CLIENTES_API = '../api/customers-admin.php';
 
 const DAYS = [
     { key:'monday', label:'Lunes' }, { key:'tuesday', label:'Martes' },
@@ -793,6 +809,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         if (tab === 'dashboard') cargarDashboard();
         if (tab === 'calendario') renderCalendario();
         if (tab === 'turnos') renderTurnos();
+        if (tab === 'clientes') cargarClientes();
         if (tab === 'whatsapp') { cargarWhatsApp(); if (!waPollTimer) waPollTimer = setInterval(cargarWhatsApp, 5000); }
         else if (waPollTimer) { clearInterval(waPollTimer); waPollTimer = null; }
     });
@@ -865,6 +882,49 @@ async function cargarServicios() {
         });
     } catch(e) {}
 }
+
+// ===== CLIENTES =====
+async function cargarClientes() {
+    var tbody = document.getElementById('tbody-clientes');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;padding:32px;">Cargando...</td></tr>';
+    try {
+        var res = await fetch(CLIENTES_API);
+        var data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="icon">👥</div>No hay clientes todavía</div></td></tr>';
+            return;
+        }
+        var q = document.getElementById('clientSearch').value.toLowerCase();
+        var list = data;
+        if (q) {
+            list = list.filter(function(c) {
+                var nombre = ((c.firstName||'') + ' ' + (c.lastName||'')).toLowerCase();
+                return nombre.indexOf(q) >= 0 || (c.phone||'').indexOf(q) >= 0 || (c.email||'').toLowerCase().indexOf(q) >= 0;
+            });
+        }
+        if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">No se encontraron clientes</div></td></tr>';
+            return;
+        }
+        list.sort(function(a,b) { return (a.firstName||'').localeCompare(b.firstName||''); });
+        tbody.innerHTML = '';
+        list.forEach(function(c) {
+            var nombre = esc(c.firstName||'') + ' ' + esc(c.lastName||'');
+            var tel = esc(c.phone||'—');
+            var email = esc(c.email||'—');
+            var count = c.appointmentCount || 0;
+            var tr = document.createElement('tr');
+            tr.innerHTML = '<td><strong>' + nombre + '</strong></td>' +
+                '<td>' + tel + '</td>' +
+                '<td>' + email + '</td>' +
+                '<td>' + count + '</td>';
+            tbody.appendChild(tr);
+        });
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">Error al cargar clientes</div></td></tr>';
+    }
+}
+document.getElementById('clientSearch').addEventListener('input', cargarClientes);
 
 document.getElementById('form-servicio').addEventListener('submit', async function(e) {
     e.preventDefault();
