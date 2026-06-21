@@ -349,7 +349,6 @@ footer .brand { font-family:'Playfair Display',serif; font-size:18px; color:var(
                     <div class="bf-group"><label class="bf-label">Apellido</label><input type="text" class="bf-input" id="bfLastName" placeholder="Tu apellido"></div>
                 </div>
                 <div class="bf-group"><label class="bf-label">WhatsApp *</label><input type="tel" class="bf-input" id="bfPhone" placeholder="Sin 0, sin 15. Ej: 3826403110" required oninput="normalizarTelefono()"><div id="phonePreview" style="font-size:12px;color:var(--acc);margin-top:4px;min-height:18px;"></div></div>
-                <div class="bf-group"><label class="bf-label">Email</label><input type="email" class="bf-input" id="bfEmail" placeholder="tu@email.com"></div>
                 <div class="bf-error hidden" id="step3Error"></div>
                 <div class="bf-actions">
                     <button class="btn btn-back" onclick="goToStep2()">← Volver</button>
@@ -677,7 +676,6 @@ footer .brand { font-family:'Playfair Display',serif; font-size:18px; color:var(
         var firstName = document.getElementById('bfFirstName').value.trim();
         var lastName = document.getElementById('bfLastName').value.trim();
         var phone = normalizarTelefonoValor();
-        var email = document.getElementById('bfEmail').value.trim();
         var errorDiv = document.getElementById('step3Error');
         var btn = document.getElementById('btnConfirmar');
 
@@ -699,7 +697,7 @@ footer .brand { font-family:'Playfair Display',serif; font-size:18px; color:var(
             body: JSON.stringify({
                 firstName: firstName,
                 lastName: lastName || firstName,
-                email: email || ('no-email-' + phone.slice(-6) + '@tetoca.com.ar'),
+                email: '',
                 phone: phone
             })
         })
@@ -750,8 +748,6 @@ footer .brand { font-family:'Playfair Display',serif; font-size:18px; color:var(
         document.getElementById('bfFirstName').value = '';
         document.getElementById('bfLastName').value = '';
         document.getElementById('bfPhone').value = '';
-        document.getElementById('phonePreview').textContent = '';
-        document.getElementById('bfEmail').value = '';
         document.getElementById('slotsContainer').innerHTML = '<div class="slots-hint">Seleccion\u00E1 una fecha para ver los horarios disponibles</div>';
         document.getElementById('step3Summary').innerHTML = '';
         document.getElementById('btnStep1Next').disabled = true;

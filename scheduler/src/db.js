@@ -67,6 +67,8 @@ function initSchema() {
       last_name TEXT DEFAULT '',
       email TEXT DEFAULT '',
       phone TEXT DEFAULT '',
+      address TEXT DEFAULT '',
+      profesional TEXT DEFAULT '',
       timezone TEXT DEFAULT 'America/Argentina/Cordoba',
       working_plan TEXT DEFAULT '{}',
       username TEXT DEFAULT 'laura',
@@ -74,6 +76,10 @@ function initSchema() {
       calendar_view TEXT DEFAULT 'default'
     )
   `);
+
+  // Add columns that may be missing from older databases
+  try { db.exec('ALTER TABLE provider_settings ADD COLUMN address TEXT DEFAULT ""'); } catch {}
+  try { db.exec('ALTER TABLE provider_settings ADD COLUMN profesional TEXT DEFAULT ""'); } catch {}
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_appointments_start ON appointments(start)
