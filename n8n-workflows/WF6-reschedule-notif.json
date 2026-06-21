@@ -1,0 +1,46 @@
+[{
+  "name": "WF-6: Notificación reagendado",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "appointment-rescheduled", "responseMode": "lastNode", "options": {} },
+      "id": "wf6-webhook",
+      "name": "Webhook appointment-rescheduled",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "appointment-rescheduled"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst a = raw.body || raw;\nvar phone = (a.customer?.phone || '').replace(/\\+/g, '').replace(/ /g, '');\nif (phone && !phone.startsWith('549') && !phone.startsWith('54') && phone.length <= 11) {\n  phone = '549' + phone;\n}\nreturn [{\n  json: {\n    clientName: (a.customer?.firstName || '') + ' ' + (a.customer?.lastName || ''),\n    phone: phone,\n    service: a.service?.name || '',\n    newDate: (a.newStart || a.start || '').split(' ')[0],\n    newTime: ((a.newStart || a.start || '').split(' ')[1] || '').substring(0, 5)\n  }\n}];"
+      },
+      "id": "wf6-extract",
+      "name": "Extraer datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://scheduler:3000/api/v1/whatsapp/send?phone=' + encodeURIComponent($json.phone) + '&message=' + encodeURIComponent('Hola ' + $json.clientName + ', tu turno fue reagendado. Nueva fecha: ' + $json.newDate + ' a las ' + $json.newTime + ' (' + $json.service + ').') }}",
+        "authentication": "none",
+        "method": "GET",
+        "sendQuery": true,
+        "sendBody": false,
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{"name": "x-api-key", "value": "={{ $env.SCHEDULER_API_KEY }}"}] },
+        "options": {}
+      },
+      "id": "wf6-send",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook appointment-rescheduled": { "main": [[{ "node": "Extraer datos", "type": "main", "index": 0 }]] },
+    "Extraer datos": { "main": [[{ "node": "Enviar WhatsApp", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "availableInMCP": true }
+}]
