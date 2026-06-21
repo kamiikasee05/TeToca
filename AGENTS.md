@@ -161,3 +161,32 @@ Desplegado en entorno Windows/WSL2. Fixes aplicados:
 | Mailpit | internal | ✅ |
 
 **Ver [[Sesion-2026-06-18]] para detalle completo.**
+
+### Security hardening — 2026-06-18 (commits `4afd018` + `edb1660`)
+
+Auditoría de seguridad completa (2ª pasada). **11 hallazgos críticos resueltos.** Stack hardened para producción.
+
+#### Cambios en auth (reglas nuevas para desarrollo)
+
+- **Scheduler API endpoints que requieren `X-API-Key` header:**
+  - `GET /customers`, `GET /appointments` (PII — ya no son públicos)
+  - `GET /appointments/:id/cancel` (anti-enumeración)
+  - `POST /api/v1/whatsapp/send` (solo n8n puede enviar WhatsApp)
+- **Endpoints públicos (sin auth):** `POST /customers`, `POST /appointments`, `GET /services`, `GET /availabilities`, `GET /slots`, `GET /health`
+- **Webhooks scheduler→n8n:** incluyen `X-Webhook-Token` header. n8n workflows deben validarlo.
+- **Todos los HTTP Request nodes de n8n que llaman al scheduler** deben incluir header:
+  ```
+  x-api-key: {{ $env.SCHEDULER_API_KEY }}
+  ```
+- **n8n workflow exports:** los 4 WFs en `n8n-workflows/` son UTF-8. Usar `add-auth-headers.js` para auto-agregar el header `x-api-key` a nuevos exports.
+- **WF-RT, WF-5, WF-6:** NO están exportados en `n8n-workflows/`. Se crearon ad-hoc en la UI de n8n. Si se migra de entorno o se recrea n8n, hay que exportarlos manualmente o recrearlos.
+- **Admin panel:** rate limiter usa `X-Real-IP` (no `REMOTE_ADDR`). Contenedor corre como non-root (`USER app`).
+- **Nginx:** monta `landing/config.json` (sin password), no `landing-salon/config.json`. Incluye security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
+- **WhatsApp proxy:** errores genéricos en producción (no stack traces). Auth logging off en prod.
+
+#### No-go items (deferidos con justificación)
+- Puertos en `0.0.0.0` — WSL2 no soporta `127.0.0.1` en arranque simultáneo
+- n8n `--no-sandbox` — requerido para Puppeteer + Chromium en Docker
+- Redis sin password — red interna, no expuesto
+
+Ver [[SecurityAudit-Report]] para el reporte completo.

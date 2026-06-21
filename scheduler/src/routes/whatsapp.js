@@ -34,7 +34,7 @@ function register(router) {
     const options = {
       hostname: OPENWA_HOST,
       port: OPENWA_PORT,
-      path: `/api/sessions/${OPENWA_SESSION_ID}/messages/send-text`,
+      path: `/sessions/${OPENWA_SESSION_ID}/messages/send-text`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -68,12 +68,16 @@ function register(router) {
 }
 
 function sendWhatsApp(phone, message) {
-  if (!OPENWA_API_KEY || !OPENWA_SESSION_ID) return;
-  if (!phone || !message) return;
+  if (!OPENWA_API_KEY || !OPENWA_SESSION_ID) { console.error('[whatsapp] missing config'); return; }
+  if (!phone || !message) { console.error('[whatsapp] missing phone or message'); return; }
   const body = JSON.stringify({ chatId: phone.includes('@c.us') ? phone : phone + '@c.us', text: message });
-  const opts = { hostname: OPENWA_HOST, port: OPENWA_PORT, path: `/api/sessions/${OPENWA_SESSION_ID}/messages/send-text`, method: 'POST',
+  const opts = { hostname: OPENWA_HOST, port: OPENWA_PORT, path: `/sessions/${OPENWA_SESSION_ID}/messages/send-text`, method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-API-Key': OPENWA_API_KEY, 'Content-Length': Buffer.byteLength(body) } };
-  try { const r = http.request(opts); r.write(body); r.end(); } catch {}
+  const r = http.request(opts, (res) => {
+    let d = ''; res.on('data', c => d += c); res.on('end', () => console.log('[whatsapp] sent to', phone, 'status:', res.statusCode, d.substring(0, 100)));
+  });
+  r.on('error', e => console.error('[whatsapp] error:', e.message));
+  r.write(body); r.end();
 }
 
 module.exports = { register, sendWhatsApp };

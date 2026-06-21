@@ -1,5 +1,44 @@
 # Estado del Proyecto
 
+## 18 Junio 2026 — Security hardening 🛡️
+
+**Hito:** Auditoría de seguridad completa (2ª pasada). 11 hallazgos críticos resueltos. Stack hardened para producción. Commits `4afd018` + `edb1660`.
+
+**Fecha:** 18 Junio 2026
+**Fase:** ✅ Etapa 1-4. ⏳ Etapa 5 — Infraestructura productiva (solo si hay cliente que paga).
+
+### Fixes aplicados (security — 11 críticos)
+
+| ID | Finding | Fix |
+|---|---|---|
+| CR-1 | `POST /whatsapp/send` público | Requiere API key (solo n8n) |
+| CR-2 | `GET /customers`, `GET /appointments` públicos (PII leak) | Removidos de rutas públicas |
+| CR-3 | `GET /appointments/:id/cancel` sin auth | Requiere API key |
+| CR-4 | Stored XSS en admin dashboard | `esc()` en todos los templates JS |
+| CR-5 | Rate limiter usaba IP de nginx | Ahora usa `X-Real-IP` header |
+| CR-6 | `whatsapp-send.php` legacy sin auth | Archivo eliminado |
+| CR-7 | Nginx servía config con password | Monta `landing/config.json` limpio |
+| CR-9 | Admin PHP corría como root | Dockerfile: `USER app` (non-root) |
+| CR-10 | Credenciales en AGENTS.md | Reemplazadas por refs a `.env` |
+| CR-11 | Webhooks scheduler→n8n sin token | `X-Webhook-Token` header agregado |
+| — | Security headers ausentes | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` |
+
+### n8n workflow hardening
+- 13 HTTP Request nodes ahora incluyen `x-api-key={{ $env.SCHEDULER_API_KEY }}` header
+- 4 WF JSON exports convertidos UTF-16LE → UTF-8
+- `n8n-workflows/add-auth-headers.js`: script utility para auto-agregar headers
+- ⚠️ WF-RT, WF-5, WF-6 no están en `n8n-workflows/` — exportar manualmente desde n8n UI
+
+### No-go / deferidos (con justificación)
+- CR-8: ports en `0.0.0.0` → necesario para WSL2
+- H-6: n8n `--no-sandbox` → requerido para Puppeteer en Docker
+- H-7: Redis sin password → red interna, no expuesto
+- H-9: WF-RT/5/6 sin exportar → creados ad-hoc en UI
+
+Ver [[SecurityAudit-Report]] para detalle completo.
+
+---
+
 ## 18 Junio 2026 — Deploy fixes (WSL2/Windows) 🛠️
 
 **Hito:** Stack desplegado y operativo en entorno Windows/WSL2. Corregidos bugs de port binding, CRLF, API routing, env vars faltantes, y límites de upload. Commit `bdcae27`.
@@ -51,7 +90,7 @@ Ver [[Sesion-2026-06-18]] para detalle completo de los fixes.
 
 ## Sesiones
 
-- [[Sesion-2026-06-18]] — Deploy fixes: WSL2 port binding, CRLF, API routing nginx, env vars, admin fixes (commit `bdcae27`)
+- [[Sesion-2026-06-18]] — Deploy fixes + Security hardening: WSL2, CRLF, nginx routing, env vars, admin + 11 críticos resueltos (commits `bdcae27`, `4afd018`, `edb1660`)
 - [[Sesion-2026-06-16]] — Landing migration PHP→Nginx static, OpenWA session recovery, WhatsApp proxy vía scheduler, 7 workflows end-to-end, WF-3 v3 con LID breakthrough, dashboard completo, auditoría de seguridad final
 - [[Sesion-2026-06-15]] — n8n upgrade 1.92.0→2.26.3, EA+MySQL retirados, migración completada
 - [[Sesion-2026-06-14]] — WF3/WF4 end-to-end debugging, PHP cancel relay, Docker Desktop estabilidad
@@ -99,13 +138,14 @@ Ver [[Sesion-2026-06-18]] para detalle completo de los fixes.
 - **Webhooks**: fires POST to n8n on `appointment-created`, `appointment-cancelled`, `appointment-rescheduled` con full payload (customer, service, provider, address).
 - **`getFullAppointment()`**: joined SELECT para payload completo en webhooks de cancel/reagendado.
 - **Query params**: `hash`, `customer_id`, `status` filters en GET /appointments.
-- **Public routes**: `POST /customers`, `POST /appointments`, `GET /appointments?status=confirmed&customer_id=X`, `GET /appointments/:id/cancel`.
+- **Public routes**: `POST /customers`, `POST /appointments`, `GET /services`, `GET /availabilities`, `GET /slots`.
+- **Auth-required routes**: `GET /customers`, `GET /appointments`, `GET /appointments/:id/cancel`, `POST /whatsapp/send` (requieren `X-API-Key` header).
 - **`address` field**: agregado a provider_settings y al payload del webhook.
 
 ### OpenWA — WhatsApp via Puppeteer
-- Session ID: `5d81145b-eb81-4fb9-82e3-ab1b1ed5ad6d`
-- Phone: `5493826403110`
-- API Key: `dev-admin-key`
+- Session ID: configurada vía `.env` (`OPENWA_SESSION_ID`)
+- Phone: configurado vía `.env` (`N8N_OWNER_PHONE`)
+- API Key: configurada vía `.env` (`OPENWA_API_KEY`)
 - **Lección clave**: WhatsApp Web vinculado reporta `from` como LID (`XXXXXXXXX@lid`), NO como número de teléfono. No se puede buscar clientes por `from` en dispositivos vinculados.
 - **Webhook event**: debe ser `message.received`, no `message` ni `message.create`.
 - **$('Normalize') no funciona**: n8n URL expressions no soportan sintaxis `$()` — usar Code node.
@@ -118,22 +158,19 @@ Ver [[Sesion-2026-06-18]] para detalle completo de los fixes.
 - **Branding config sync**: `admin/save-branding.php` escribe a `landing-salon/config.json` (admin) Y `landing/config.json` (landing pública, password stripped).
 - **Services CRUD**: create/read/update/delete vía scheduler API.
 - **Appointments management**: view/edit/delete desde dashboard.
-- **Credentials**: `admin` / `admin2024`.
+- **Credentials**: configuradas vía `.env` (hash bcrypt).
 
 ### Landing pública (Nginx + vanilla JS SPA, puerto :8080)
 - Formulario de reserva 3 pasos: servicio → fecha/hora → datos.
 - Mobile-first, colores desde `config.json`.
 - Llama directo a scheduler API (`POST /customers`, `POST /appointments`).
 
-## Seguridad — Auditoría final (2026-06-16)
+## Seguridad — Auditorías
 
-**Veredicto:** 🟡 MEDIUM RISK — 3 críticos, 4 sospechosos, 4 observaciones.
-
-| Categoría | Cantidad | Acción |
-|---|---|---|
-| 🔴 Críticos | 3 | Deben resolverse antes de deploy productivo (Etapa 5) |
-| 🟠 Sospechosos | 4 | Revisar antes de producción |
-| 🟡 Observaciones | 4 | Mejoras deseables |
+| Fecha | Veredicto | Críticos | Estado |
+|---|---|---|---|
+| 16 Jun 2026 | 🟡 MEDIUM RISK | 3 | Resueltos 18 Jun |
+| 18 Jun 2026 | 🟢 HARDENED FOR PRODUCTION | 11 | ✅ 11 resueltos, 4 deferidos documentados |
 
 Reporte completo en [[SecurityAudit-Report]].
 

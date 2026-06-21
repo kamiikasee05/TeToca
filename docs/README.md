@@ -47,7 +47,7 @@ Sistema de turnos online para pequeños negocios en ciudades intermedias de Arge
 
 ## Sesiones
 
-- [[Sesion-2026-06-18]] — Deploy fixes: WSL2, CRLF, nginx routing, env vars, admin
+- [[Sesion-2026-06-18]] — Deploy fixes (WSL2, CRLF, nginx routing, admin) + Security hardening (11 críticos resueltos, commits `bdcae27`, `4afd018`, `edb1660`)
 - [[Sesion-2026-06-16]] — Landing PHP→Nginx static, WhatsApp proxy, OpenWA session recovery
 - [[Sesion-2026-06-15]] — n8n upgrade, EA+MySQL retirados, migración completada
 - [[Sesion-2026-06-14]] — WF3/WF4 debugging end-to-end, PHP cancel relay

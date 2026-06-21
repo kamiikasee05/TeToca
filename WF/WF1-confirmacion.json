@@ -1,0 +1,207 @@
+[
+  {
+    "updatedAt": "2026-06-16T02:23:57.000Z",
+    "createdAt": "2026-06-15T19:30:00.000Z",
+    "id": "wf-realtime-confirmacion",
+    "name": "WF-RT: Confirmaci├ö├Â┬úÔö£├│├ö├Â┬╝├ö├Â├®n en tiempo real (Webhook Scheduler)",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "webhook-trigger",
+        "name": "Webhook appointment-created",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          250,
+          300
+        ],
+        "parameters": {
+          "path": "appointment-created",
+          "responseMode": "responseNode",
+          "options": {},
+          "httpMethod": "POST"
+        },
+        "webhookId": "appointment-created"
+      },
+      {
+        "id": "extract-data",
+        "name": "Extraer datos",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 1,
+        "position": [
+          450,
+          300
+        ],
+        "parameters": {
+          "jsCode": "const raw = $input.first().json;\nconst a = raw.body || raw;\nvar phone = (a.customer?.phone || '').replace(/\\+/g, '').replace(/ /g, '');\nif (phone && !phone.startsWith('549') && !phone.startsWith('54') && phone.length <= 11) {\n  phone = '549' + phone;\n}\nreturn [{\n  json: {\n    clientName: (a.customer?.firstName || '') + ' ' + (a.customer?.lastName || ''),\n    phone: phone,\n    service: a.service?.name || '',\n    date: (a.start || '').split(' ')[0],\n    time: ((a.start || '').split(' ')[1] || '').substring(0, 5),\n    location: 'Mitre 456, Chamical',\n    provider: (a.provider?.firstName || '') + ' ' + (a.provider?.lastName || '')\n  }\n}];"
+        }
+      },
+      {
+        "id": "format-message",
+        "name": "Formatear mensaje",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          650,
+          300
+        ],
+        "parameters": {
+          "values": {
+            "string": [
+              {
+                "name": "message",
+                "value": "=├ö├Â┬úÔö£Ôöé├ö├ÂÔòØÔö£ÔöñÔö£├ÂÔö£├ºÔö¼┬¼ ├ö├Â┬úÔö£┬«├ö├Â┬╝Ôö£┬íTu turno est├ö├Â┬úÔö£├│├ö├Â┬╝Ôö£┬í confirmado, {{ $json.clientName }}!\n\n├ö├Â┬ú├ö├╗├ª├ö├ÂÔòØÔö¼┬«Ôö£├ÂÔö£├ºÔö¼├║Ôö£├ÂÔö£├ºÔö¼┬¼ {{ $json.date }} a las {{ $json.time }}\n├ö├Â┬ú├ö├╗├ª├ö├ÂÔòØÔö¼┬«Ôö£├ÂÔö£├ºÔö£├╗Ôö£├ÂÔö£├ºÔö¼┬¼ Servicio: {{ $json.service }}\n├ö├Â┬ú├ö├╗├ª├ö├ÂÔòØÔö¼┬«Ôö£├ÂÔö£├ºÔö£ÔöÉ├ö├Â┬╝Ôö£ÔûÆ Profesional: {{ $json.provider }}\n├ö├Â┬ú├ö├╗├ª├ö├ÂÔòØÔö¼┬«Ôö£├ÂÔö£├ºÔö¼├║├ö├Â┬╝Ôö£┬╝ {{ $json.location }}\n\nPara cancelar, respond├ö├Â┬úÔö£├│├ö├Â┬╝Ôö¼┬½ CANCELAR a este mensaje."
+              }
+            ]
+          },
+          "options": {
+            "keepOutput": true
+          }
+        }
+      },
+      {
+        "id": "send-whatsapp",
+        "name": "Enviar WhatsApp",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          850,
+          300
+        ],
+        "parameters": {
+          "requestMethod": "POST",
+          "url": "={{ 'http://openwa:2785/api/sessions/' + $env.OPENWA_SESSION_ID + '/messages/send-text' }}",
+          "sendQuery": false,
+          "sendBody": true,
+          "sendHeaders": true,
+          "options": {},
+          "bodyContentType": "json",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "X-API-Key",
+                "value": "={{ `$env.OPENWA_API_KEY }}"
+              }
+            ]
+          },
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "chatId",
+                "value": "={{ $json.phone }}@c.us"
+              },
+              {
+                "name": "text",
+                "value": "={{ $json.message }}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "respond-ok",
+        "name": "Responder OK",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          1050,
+          300
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ JSON.stringify({ status: 'ok', processed: true }) }}"
+        }
+      }
+    ],
+    "connections": {
+      "Webhook appointment-created": {
+        "main": [
+          [
+            {
+              "node": "Extraer datos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extraer datos": {
+        "main": [
+          [
+            {
+              "node": "Formatear mensaje",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Formatear mensaje": {
+        "main": [
+          [
+            {
+              "node": "Enviar WhatsApp",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar WhatsApp": {
+        "main": [
+          [
+            {
+              "node": "Responder OK",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Responder OK": {
+        "main": []
+      }
+    },
+    "settings": {},
+    "staticData": {},
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": null,
+    "versionId": "ab6c9116-ccfd-485f-a046-451f37f37da2",
+    "activeVersionId": "ab6c9116-ccfd-485f-a046-451f37f37da2",
+    "versionCounter": 3,
+    "triggerCount": 1,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-06-15T23:07:00.910Z",
+        "createdAt": "2026-06-15T23:07:00.910Z",
+        "role": "workflow:owner",
+        "workflowId": "wf-realtime-confirmacion",
+        "projectId": "y5S2Xurtv93QXz6M",
+        "project": {
+          "updatedAt": "2026-06-11T21:46:08.894Z",
+          "createdAt": "2026-06-11T02:57:37.602Z",
+          "id": "y5S2Xurtv93QXz6M",
+          "name": "Ezequiel Godoy <godoy97@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "5f87689e-a34b-4d5e-8018-dc12104ac779"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "GUIA-CONFIGURACION.md",
+                "file": "docs/TuAhoraScheduler.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "GUIA-CONFIGURACION"
+              "title": "TuAhoraScheduler"
             }
           }
         ]
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "GUIA-CONFIGURACION.md",
+                "file": "docs/TuAhoraScheduler.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Esquema de GUIA-CONFIGURACION"
+              "title": "Esquema de TuAhoraScheduler"
             }
           }
         ],
@@ -185,6 +185,10 @@
   },
   "active": "41926e0bd4003b2c",
   "lastOpenFiles": [
+    "docs/Sesion-2026-06-12.md",
+    "docs/Sesion-2026-06-15.md",
+    "docs/Sesion-2026-06-18.md",
+    "GUIA-CONFIGURACION.md",
     "landing-salon/api/disponibilidad.php",
     "baileys-service/package-lock.json",
     "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/composers/string.d.ts",
@@ -195,7 +199,6 @@
     "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/composers/buffer.d.ts",
     "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/encoder.js",
     "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/encoder.d.ts",
-    "baileys-service/node_modules/@redis/client/dist/lib/client/RESP2/decoder.js",
     "baileys-service/node_modules/@tokenizer/inflate/node_modules/ms/readme.md",
     "baileys-service/node_modules/@tokenizer/inflate/node_modules/ms/license.md",
     "baileys-service/node_modules/@tokenizer/inflate/node_modules/debug/README.md",
@@ -220,9 +223,6 @@
     "baileys-service/node_modules/axios/lib/core/README.md",
     "baileys-service/node_modules/axios/lib/adapters/README.md",
     "baileys-service/node_modules/agent-base/node_modules/ms/readme.md",
-    "baileys-service/node_modules/agent-base/node_modules/ms/license.md",
-    "baileys-service/node_modules/agent-base/node_modules/debug/README.md",
-    "baileys-service/node_modules/protobufjs/google/README.md",
     "baileys-service/node_modules/pino/pretty-demo.png",
     "baileys-service/node_modules/pino/pino-tree.png",
     "baileys-service/node_modules/pino/pino-logo-hire.png",

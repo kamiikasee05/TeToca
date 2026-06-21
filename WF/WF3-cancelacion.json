@@ -1,0 +1,586 @@
+[
+  {
+    "updatedAt": "2026-06-13T18:54:22.118Z",
+    "createdAt": "2026-06-11T23:13:02.000Z",
+    "id": "wf3-cancelacion",
+    "name": "WF-3: Cancelaci+�n por WhatsApp",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "webhook-trigger",
+        "name": "Webhook WhatsApp",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          250,
+          300
+        ],
+        "parameters": {
+          "path": "whatsapp-cancelacion",
+          "responseMode": "lastNode",
+          "options": {},
+          "httpMethod": "GET,POST"
+        },
+        "webhookId": "whatsapp-cancelacion"
+      },
+      {
+        "id": "check-cancel",
+        "name": "-+Contiene CANCELAR?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [
+          450,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "string": [
+              {
+                "value1": "={{ $json.text }}",
+                "operation": "contains",
+                "value2": "CANCELAR"
+              }
+            ]
+          },
+          "options": {
+            "caseSensitive": false
+          }
+        }
+      },
+      {
+        "id": "find-customer",
+        "name": "Buscar cliente por tel+�fono",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [
+          650,
+          500
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "=http://scheduler:3000/api/v1/customers?q={{ $json.phone }}",
+          "authentication": "genericCredentialType",
+          "options": {},
+          "genericAuthType": "httpBasicAuth"
+        },
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "g4JZy1RbupSK6sx9",
+            "name": "EA Cred"
+          }
+        }
+      },
+      {
+        "id": "customer-found",
+        "name": "-+Cliente encontrado?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [
+          850,
+          500
+        ],
+        "parameters": {
+          "conditions": {
+            "number": [
+              {
+                "value1": "={{ $json.length }}",
+                "operation": "larger",
+                "value2": 0
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "find-appointment",
+        "name": "Buscar turnos del cliente",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [
+          1050,
+          400
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "=http://scheduler:3000/api/v1/appointments?with=customer,service,provider",
+          "authentication": "genericCredentialType",
+          "options": {},
+          "genericAuthType": "httpBasicAuth",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
+        },
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "g4JZy1RbupSK6sx9",
+            "name": "EA Cred"
+          }
+        }
+      },
+      {
+        "id": "filter-future",
+        "name": "Filtrar turnos futuros del cliente",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 1,
+        "position": [
+          1250,
+          400
+        ],
+        "parameters": {
+          "jsCode": "const customerId = $('Buscar cliente por tel+�fono').first().json[0].id;\nconst now = new Date().toISOString().replace('T', ' ').substring(0, 19);\n\nconst appointments = $input.all();\nconst future = appointments.filter(b => {\n  return b.json.customerId === customerId && b.json.start > now;\n});\n\nif (future.length === 0) {\n  return [{ json: { empty: true } }];\n}\nreturn future.map(b => ({\n  json: {\n    id: b.json.id,\n    start: b.json.start,\n    service: b.json.service?.name || '',\n    provider: (b.json.provider?.firstName || '') + ' ' + (b.json.provider?.lastName || '')\n  }\n}));"
+        }
+      },
+      {
+        "id": "check-future",
+        "name": "-+Turno futuro encontrado?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [
+          1450,
+          400
+        ],
+        "parameters": {
+          "conditions": {
+            "string": [
+              {
+                "value1": "={{ $json.empty }}",
+                "operation": "isNotEmpty",
+                "value2": ""
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "delete-booking",
+        "name": "Cancelar turno en EA",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [
+          1650,
+          300
+        ],
+        "parameters": {
+          "method": "DELETE",
+          "url": "=http://scheduler:3000/api/v1/appointments/{{ $json.id }}",
+          "authentication": "genericCredentialType",
+          "options": {},
+          "genericAuthType": "httpBasicAuth",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
+        },
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "g4JZy1RbupSK6sx9",
+            "name": "EA Cred"
+          }
+        }
+      },
+      {
+        "id": "confirm-cancel",
+        "name": "Enviar confirmaci+�n de cancelaci+�n",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1850,
+          300
+        ],
+        "parameters": {
+          "authentication": "none",
+          "requestMethod": "POST",
+          "url": "={{ 'http://scheduler:3000/api/v1/whatsapp/send?phone=' + encodeURIComponent($json.phone) + '&message=' + encodeURIComponent($json.message) }}",
+          "allowUnauthorizedCerts": false,
+          "responseFormat": "json",
+          "jsonParameters": true,
+          "sendBody": false,
+          "sendHeaders": false,
+          "options": {},
+          "infoMessage": "",
+          "method": "GET",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "notify-owner",
+        "name": "Notificar cancelaci+�n a due+�a",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2050,
+          300
+        ],
+        "parameters": {
+          "authentication": "none",
+          "requestMethod": "POST",
+          "url": "={{ 'http://scheduler:3000/api/v1/whatsapp/send?phone=' + encodeURIComponent($json.phone) + '&message=' + encodeURIComponent($json.message) }}",
+          "allowUnauthorizedCerts": false,
+          "responseFormat": "json",
+          "jsonParameters": true,
+          "sendBody": false,
+          "sendHeaders": false,
+          "options": {},
+          "infoMessage": "",
+          "method": "GET",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "no-booking",
+        "name": "Responder sin turno activo",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1650,
+          600
+        ],
+        "parameters": {
+          "authentication": "none",
+          "requestMethod": "POST",
+          "url": "={{ 'http://scheduler:3000/api/v1/whatsapp/send?phone=' + encodeURIComponent($json.phone) + '&message=' + encodeURIComponent($json.message) }}",
+          "allowUnauthorizedCerts": false,
+          "responseFormat": "json",
+          "jsonParameters": true,
+          "sendBody": false,
+          "sendHeaders": false,
+          "options": {},
+          "infoMessage": "",
+          "method": "GET",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-api-key",
+                "value": "={{ $env.SCHEDULER_API_KEY }}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "9fdf4836-f37b-4298-b966-d9eb19baa218",
+        "name": "Normalize",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          350,
+          300
+        ],
+        "parameters": {
+          "values": {
+            "string": [
+              {
+                "name": "phone",
+                "value": "={{ ($json.body.from || \"\").replace(/@c\\.us$/, \"\") }}"
+              },
+              {
+                "name": "text",
+                "value": "={{ $json.body.body }}"
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "817d255f-238d-4721-938c-eae39ce4fd9c",
+        "name": "Set Confirm Cancel Msg",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          1900,
+          300
+        ],
+        "parameters": {
+          "values": {
+            "string": [
+              {
+                "name": "phone",
+                "value": "={{ $(\"Normalize\").first().json.phone }}"
+              },
+              {
+                "name": "message",
+                "value": "Tu turno ha sido cancelado exitosamente."
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "50c33cd5-52a3-4264-9bb5-8aa314440073",
+        "name": "Set Notify Owner Msg",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          2050,
+          300
+        ],
+        "parameters": {
+          "values": {
+            "string": [
+              {
+                "name": "phone",
+                "value": "={{ $(\"Normalize\").first().json.phone }}"
+              },
+              {
+                "name": "message",
+                "value": "Un cliente cancelo su turno."
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "eae3bf1b-4757-4d17-a98c-dd2deebd49d7",
+        "name": "Set No Booking Msg",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 1,
+        "position": [
+          1650,
+          550
+        ],
+        "parameters": {
+          "values": {
+            "string": [
+              {
+                "name": "phone",
+                "value": "={{ $(\"Normalize\").first().json.phone }}"
+              },
+              {
+                "name": "message",
+                "value": "No encontramos turnos activos para tu numero."
+              }
+            ]
+          },
+          "options": {}
+        }
+      }
+    ],
+    "connections": {
+      "Webhook WhatsApp": {
+        "main": [
+          [
+            {
+              "node": "Normalize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Normalize": {
+        "main": [
+          [
+            {
+              "node": "-+Contiene CANCELAR?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "-+Contiene CANCELAR?": {
+        "main": [
+          [
+            {
+              "node": "Buscar cliente por tel+�fono",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Buscar cliente por tel+�fono": {
+        "main": [
+          [
+            {
+              "node": "-+Cliente encontrado?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "-+Cliente encontrado?": {
+        "main": [
+          [
+            {
+              "node": "Buscar turnos del cliente",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Set No Booking Msg",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar turnos del cliente": {
+        "main": [
+          [
+            {
+              "node": "Filtrar turnos futuros del cliente",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filtrar turnos futuros del cliente": {
+        "main": [
+          [
+            {
+              "node": "-+Turno futuro encontrado?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "-+Turno futuro encontrado?": {
+        "main": [
+          [
+            {
+              "node": "Set No Booking Msg",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Cancelar turno en EA",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cancelar turno en EA": {
+        "main": [
+          [
+            {
+              "node": "Set Confirm Cancel Msg",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Confirm Cancel Msg": {
+        "main": [
+          [
+            {
+              "node": "Enviar confirmaci+�n de cancelaci+�n",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Enviar confirmaci+�n de cancelaci+�n": {
+        "main": [
+          [
+            {
+              "node": "Set Notify Owner Msg",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Notify Owner Msg": {
+        "main": [
+          [
+            {
+              "node": "Notificar cancelaci+�n a due+�a",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set No Booking Msg": {
+        "main": [
+          [
+            {
+              "node": "Responder sin turno activo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {},
+    "staticData": {
+      "global": {
+        "lastProcessedId": 0
+      }
+    },
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": null,
+    "versionId": "51885075-ec13-4a8b-b345-eb2938870c2c",
+    "activeVersionId": "51885075-ec13-4a8b-b345-eb2938870c2c",
+    "versionCounter": 42,
+    "triggerCount": 1,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-06-11T23:13:02.003Z",
+        "createdAt": "2026-06-11T23:13:02.003Z",
+        "role": "workflow:owner",
+        "workflowId": "wf3-cancelacion",
+        "projectId": "y5S2Xurtv93QXz6M",
+        "project": {
+          "updatedAt": "2026-06-11T21:46:08.894Z",
+          "createdAt": "2026-06-11T02:57:37.602Z",
+          "id": "y5S2Xurtv93QXz6M",
+          "name": "Ezequiel Godoy <godoy97@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "5f87689e-a34b-4d5e-8018-dc12104ac779"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": "v39",
+      "description": "Fixed field name mismatches: Normalize node, IF body check, message Set nodes"
+    }
+  }
+]

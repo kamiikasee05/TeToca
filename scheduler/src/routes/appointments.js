@@ -1,6 +1,5 @@
 const { getDb } = require('../db');
 const webhooks = require('../webhooks');
-const { sendWhatsApp } = require('./whatsapp');
 
 function register(router) {
   router.get('/appointments', (req, res) => {
@@ -110,7 +109,12 @@ function register(router) {
         `👩‍🎨 Profesional: ${prov.profesional || prov.firstName || ''}\n` +
         `📍 ${prov.address || 'Mitre 456, Chamical'}\n\n` +
         `Para cancelar, respondé CANCELAR a este mensaje.`;
-      sendWhatsApp(phone, msg);
+      const http = require('http');
+      const waBody = JSON.stringify({ phone, message: msg });
+      const waOpts = { hostname: 'localhost', port: process.env.PORT || 3000, path: '/api/v1/whatsapp/send', method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.API_KEY || '', 'Content-Length': Buffer.byteLength(waBody) } };
+      try { const waReq = http.request(waOpts); waReq.write(waBody); waReq.end(); } catch(e) {}
+    }
     }
 
     res.status(201).json({
