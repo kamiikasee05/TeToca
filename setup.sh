@@ -136,7 +136,6 @@ SCHEDULER_API_KEY=$(openssl rand -hex 16)       || abort "Error generando SCHEDU
 OPENWA_API_KEY=$(openssl rand -hex 16)           || abort "Error generando OPENWA_API_KEY"
 API_MASTER_KEY="$OPENWA_API_KEY"
 OPENWA_SESSION_ID=$(uuidgen)                     || abort "Error generando OPENWA_SESSION_ID (¿uuid-runtime instalado?)"
-N8N_WEBHOOK_TOKEN=$(openssl rand -hex 16)        || abort "Error generando N8N_WEBHOOK_TOKEN"
 REDIS_PASSWORD=$(openssl rand -hex 16)           || abort "Error generando REDIS_PASSWORD"
 
 # El hash puede fallar si la password tiene caracteres especiales
@@ -166,10 +165,6 @@ SCHEDULER_API_KEY='${SCHEDULER_API_KEY}'
 OPENWA_API_KEY='${OPENWA_API_KEY}'
 API_MASTER_KEY='${API_MASTER_KEY}'
 OPENWA_SESSION_ID='${OPENWA_SESSION_ID}'
-
-# --- n8n ---
-N8N_WEBHOOK_TOKEN='${N8N_WEBHOOK_TOKEN}'
-N8N_OWNER_PHONE='${WHATSAPP_PHONE}'
 
 # --- Admin Panel ---
 ADMIN_PASSWORD_HASH='${ADMIN_PASSWORD_HASH}'

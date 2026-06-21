@@ -1,5 +1,24 @@
 const { getDb } = require('../db');
 const webhooks = require('../webhooks');
+const { sendWhatsApp } = require('./whatsapp');
+
+function notifyCustomer(full, type) {
+  const c = full.customer || {};
+  const s = full.service || {};
+  const phone = (c.phone || '').replace(/\+/g, '').replace(/ /g, '');
+  if (!phone || phone.length < 8) return;
+  const date = (full.start || '').split(' ')[0];
+  const time = ((full.start || '').split(' ')[1] || '').substring(0, 5);
+  let msg;
+  if (type === 'cancel') {
+    msg = `Hola ${c.firstName || ''}, tu turno del ${date} a las ${time} (${s.name || ''}) fue cancelado. Reserva un nuevo turno desde nuestra web.`;
+  } else if (type === 'reschedule') {
+    msg = `Hola ${c.firstName || ''}, tu turno fue reagendado. Nueva fecha: ${date} a las ${time} (${s.name || ''}).`;
+  } else {
+    msg = `Hola ${c.firstName || ''} ${c.lastName || ''}!\n\nTu turno esta confirmado:\n${date} a las ${time}\nServicio: ${s.name || ''}`;
+  }
+  sendWhatsApp(phone, msg);
+}
 
 function register(router) {
   router.get('/appointments', (req, res) => {
@@ -47,6 +66,7 @@ function register(router) {
     db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run('cancelled', +req.params.id);
     const full = getFullAppointment(+req.params.id);
     webhooks.fire('appointment-cancelled', full);
+    notifyCustomer(full, 'cancel');
     res.json({ id: row.id, status: 'cancelled', phone: '549' + (full.customer?.phone || row.phone || ''), start: row.start, service: full.service?.name || '' });
   });
 
@@ -157,10 +177,12 @@ function register(router) {
     if (d.status === 'cancelled') {
       const full = getFullAppointment(row.id);
       webhooks.fire('appointment-cancelled', full);
+      notifyCustomer(full, 'cancel');
     }
     if (d.start && d.start !== existing.start) {
       const full = getFullAppointment(row.id);
       webhooks.fire('appointment-rescheduled', { ...full, oldStart: existing.start, newStart: row.start });
+      notifyCustomer(full, 'reschedule');
     }
 
     res.json({
@@ -178,6 +200,7 @@ function register(router) {
     db.prepare('DELETE FROM appointments WHERE id = ?').run(+req.params.id);
     const full = getFullAppointment(row.id);
     webhooks.fire('appointment-cancelled', full);
+    notifyCustomer(full, 'cancel');
     res.json({
       id: row.id, start: row.start, end: row.end,
       serviceId: row.service_id, providerId: row.provider_id,

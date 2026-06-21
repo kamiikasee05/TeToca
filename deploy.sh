@@ -26,7 +26,7 @@ fi
 echo "[1/4] Validating .env ..."
 # shellcheck disable=SC1091
 source .env
-required_vars=(SCHEDULER_API_KEY API_MASTER_KEY OPENWA_SESSION_ID N8N_WEBHOOK_TOKEN ADMIN_PASSWORD_HASH REDIS_PASSWORD)
+required_vars=(SCHEDULER_API_KEY API_MASTER_KEY OPENWA_SESSION_ID ADMIN_PASSWORD_HASH REDIS_PASSWORD)
 missing=0
 for var in "${required_vars[@]}"; do
     if [ -z "${!var:-}" ] || [[ "${!var}" == CAMBIAR* ]]; then
@@ -44,7 +44,7 @@ echo "  All required variables look valid."
 # --- Pull public images ---
 echo ""
 echo "[2/4] Pulling public images ..."
-docker compose $COMPOSE_ARGS pull landing n8n redis 2>&1 || echo "  WARNING: Some images may already be present locally (non-fatal)."
+docker compose $COMPOSE_ARGS pull landing redis 2>&1 || echo "  WARNING: Some images may already be present locally (non-fatal)."
 
 # --- Start stack ---
 echo ""

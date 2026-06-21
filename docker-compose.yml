@@ -1,6 +1,5 @@
 volumes:
   redis-data:
-  n8n_data:
   openwa_data:
   scheduler_data:
 
@@ -26,10 +25,7 @@ services:
       OPENWA_API_KEY: ${OPENWA_API_KEY}
       OPENWA_SESSION_ID: ${OPENWA_SESSION_ID}
       NODE_OPTIONS: --dns-result-order=ipv4first
-      N8N_WEBHOOK_URL: http://n8n:5678/webhook/
     depends_on:
-      n8n:
-        condition: service_started
       openwa:
         condition: service_started
     networks:
@@ -81,35 +77,6 @@ services:
       - redis-data:/data
     networks:
       - stack
-
-  n8n:
-    image: n8nio/n8n:2.26.3
-    container_name: n8n
-    restart: unless-stopped
-    ports:
-      - "5678:5678"
-    environment:
-      N8N_PORT: 5678
-      N8N_PROTOCOL: http
-      N8N_HOST: "localhost:5678"
-      WEBHOOK_URL: "http://localhost:5678"
-      N8N_SECURE_COOKIE: "false"
-      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
-      EXECUTIONS_DATA_PRUNE: "true"
-      EXECUTIONS_DATA_MAX_AGE: 168
-      DB_TYPE: sqlite
-      TZ: America/Argentina/Buenos_Aires
-      N8N_WEBHOOK_TOKEN: ${N8N_WEBHOOK_TOKEN}
-      N8N_OWNER_PHONE: ${N8N_OWNER_PHONE}
-      SCHEDULER_API_KEY: ${SCHEDULER_API_KEY}
-      OPENWA_API_KEY: ${OPENWA_API_KEY}
-      OPENWA_SESSION_ID: ${OPENWA_SESSION_ID}
-    volumes:
-      - n8n_data:/home/node/.n8n
-    networks:
-      - stack
-
-
 
   openwa:
     image: docker.io/library/openwa-openwa:latest

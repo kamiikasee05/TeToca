@@ -8,6 +8,7 @@ const services = require('./routes/services');
 const providers = require('./routes/providers');
 const slots = require('./routes/slots');
 const whatsapp = require('./routes/whatsapp');
+const workflows = require('./workflows');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +16,9 @@ const PORT = process.env.PORT || 3000;
 app.disable('x-powered-by');
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:8080' }));
 app.use(express.json());
+
+// WhatsApp webhook from OpenWA (must be before auth middleware)
+workflows.registerWhatsAppWebhook(app);
 
 app.use(authMiddleware);
 
@@ -35,4 +39,5 @@ app.get('/health', (req, res) => {
 getDb();
 app.listen(PORT, () => {
   console.log(`tetoca-scheduler running on port ${PORT}`);
+  workflows.startCronJobs();
 });
