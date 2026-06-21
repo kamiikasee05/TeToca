@@ -196,8 +196,8 @@ function register(router) {
     const db = getDb();
     const row = db.prepare('SELECT * FROM appointments WHERE id = ?').get(+req.params.id);
     if (!row) return res.status(404).json({ success: false, message: 'Turno no encontrado' });
-    db.prepare('DELETE FROM appointments WHERE id = ?').run(+req.params.id);
     const full = getFullAppointment(row.id);
+    db.prepare('DELETE FROM appointments WHERE id = ?').run(+req.params.id);
     webhooks.fire('appointment-cancelled', full);
     notifyCustomer(full, 'cancel');
     res.json({
