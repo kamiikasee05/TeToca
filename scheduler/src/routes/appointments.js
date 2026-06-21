@@ -1,5 +1,15 @@
 const { getDb } = require('../db');
 const webhooks = require('../webhooks');
+const http = require('http');
+
+function notifyWhatsApp(phone, message) {
+  if (!phone || !message) return;
+  const KEY = process.env.API_KEY || '';
+  const body = JSON.stringify({ phone, message });
+  const opts = { hostname: 'localhost', port: process.env.PORT || 3000, path: '/api/v1/whatsapp/send', method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'x-api-key': KEY } };
+  try { const r = http.request(opts); r.write(body); r.end(); } catch {}
+}
 
 function register(router) {
   router.get('/appointments', (req, res) => {
@@ -92,6 +102,25 @@ function register(router) {
     `).get(result.lastInsertRowid);
 
     webhooks.fire('appointment-created', mapAppointment(row, ['customer', 'service', 'provider']));
+
+    // Direct WhatsApp notification (no depende de n8n)
+    const full = mapAppointment(row, ['customer', 'service', 'provider']);
+    const cust = full.customer || {};
+    const svc = full.service || {};
+    const prov = full.provider || {};
+    const phone = (cust.phone || '').replace(/\+/g, '').replace(/ /g, '');
+    if (phone && phone.length >= 8) {
+      const date = (full.start || '').split(' ')[0] || '';
+      const time = ((full.start || '').split(' ')[1] || '').substring(0, 5);
+      const msg = `¡Hola ${cust.firstName || ''} ${cust.lastName || ''}!\n\n` +
+        `Tu turno está confirmado:\n` +
+        `📅 ${date} a las ${time}\n` +
+        `💅 Servicio: ${svc.name || ''}\n` +
+        `👩‍🎨 Profesional: ${prov.profesional || prov.firstName || ''}\n` +
+        `📍 ${prov.address || 'Mitre 456, Chamical'}\n\n` +
+        `Para cancelar, respondé CANCELAR a este mensaje.`;
+      notifyWhatsApp(phone, msg);
+    }
 
     res.status(201).json({
       id: row.id, start: row.start, end: row.end,

@@ -8,11 +8,12 @@ Ver archivo original: [[roadmap-etapas.md]]
 2. **Config (servicios y horarios)** — ✅ Completada
 3. **WhatsApp automation** — ✅ Completada (7/7 workflows)
 4. **Artefactos de negocio** — ✅ Completada
-5. **Infraestructura productiva** — ⏳ Pendiente (solo si hay cliente que paga)
+5. **QA & Testing** — 🔨 En progreso (21 Jun 2026)
+6. **Infraestructura productiva** — ⏳ Pendiente (solo si hay cliente que paga)
 
-> **16 Jun 2026 (sesión de cierre):** MVP 100% completado. Los 7 workflows n8n son funcionales end-to-end. Dashboard admin operativo con branding, services CRUD, y gestión de turnos. Stack final: Nginx :8080, PHP+GD :8081, Scheduler :3000, OpenWA :2785, n8n :5678. Auditoría de seguridad completada (🟡 MEDIUM RISK, 3 críticos pendientes para Etapa 5). WF-3 reconstruido como v3 con Code-based router tras el breakthrough del LID de WhatsApp Web.
-> 
-> **18 Jun 2026 (deploy fixes):** Stack desplegado en Windows/WSL2. Corregidos port binding (0.0.0.0), CRLF (.env quoting), API routing (nginx proxy `/api/v1`→scheduler), env vars faltantes, admin upload limits y logout. Commit `bdcae27`. Ver [[Sesion-2026-06-18]].
+> **21 Jun 2026 (VM deploy + hardening):** Despliegue completo en Ubuntu Server 24.04 (VM). Stack funcional con 4 workflows n8n importados y publicados. Se detectó que el flujo de notificaciones en tiempo real (scheduler → n8n webhook → WhatsApp) es frágil: múltiples puntos de falla (env vars bloqueadas, headers mal configurados, cambios no publicados, formato de body inconsistente). Se agrega Etapa 5.5 QA para robustecer el deploy.
+>
+> **Decisión arquitectónica:** La confirmación en tiempo real (WF-RT) se moverá del webhook n8n al scheduler directamente para eliminar la cadena de dependencias. Los flujos complejos (cancelación, reagendado, recordatorios) permanecen en n8n.
 
 ## Estado por etapa
 
@@ -20,9 +21,10 @@ Ver archivo original: [[roadmap-etapas.md]]
 |---|---|---|
 | Etapa 1 — Visual/Landing | ✅ Completada | Landing SPA con booking de 3 pasos, mobile-first, colores desde config.json |
 | Etapa 2 — Config | ✅ Completada | Dashboard admin: branding (logo, gallery, colores), services CRUD, gestión de turnos |
-| Etapa 3 — WhatsApp | ✅ MVP COMPLETADO | 7/7 workflows: WF-RT, WF-1, WF-2, WF-3 v3, WF-4, WF-5, WF-6 todos funcionales end-to-end |
+| Etapa 3 — WhatsApp | ✅ MVP COMPLETADO | 7/7 workflows diseñados. 4/7 operativos post-deploy VM. |
 | Etapa 4 — Negocio | ✅ Completada | Contrato, guías, propuesta comercial redactados |
-| Etapa 5 — Infraestructura productiva | ⏳ Pendiente | Solo si hay cliente que paga. Requiere resolver 3 críticos de auditoría. |
+| Etapa 5 — QA & Testing | 🔨 En progreso | Checklist de validación post-deploy. End-to-end test automatizado. |
+| Etapa 6 — Infraestructura productiva | ⏳ Pendiente | Solo si hay cliente que paga. |
 
 ## 7 Workflows n8n — Estado final
 
