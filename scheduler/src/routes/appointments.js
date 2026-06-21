@@ -146,7 +146,6 @@ function register(router) {
           fs.unlinkSync(tmpFile);
           if (err) console.error('[appt] WA error:', err.message);
         });
-        });
       }
     }
 
