@@ -13,10 +13,12 @@ function startCronJobs() {
     const dateStr = tomorrow.toISOString().split('T')[0];
 
     const rows = db.prepare(`
-      SELECT a.*, c.first_name, c.last_name, c.phone, s.name as svc_name
+      SELECT a.*, c.first_name, c.last_name, c.phone, s.name as svc_name,
+        p.profesional, p.address
       FROM appointments a
       JOIN customers c ON a.customer_id = c.id
       JOIN services s ON a.service_id = s.id
+      LEFT JOIN provider_settings p ON a.provider_id = p.provider_id
       WHERE a.status = 'confirmed' AND a.start LIKE ?
     `).all(dateStr + '%');
 
@@ -24,8 +26,10 @@ function startCronJobs() {
       const time = (r.start || '').split(' ')[1]?.substring(0, 5) || '';
       const phone = (r.phone || '').replace(/\+/g, '').replace(/ /g, '');
       if (!phone || phone.length < 8) continue;
+      const prof = r.profesional || 'Cecilia Natali Godoy';
+      const addr = r.address || 'Mitre 456, Chamical';
       const msg = `⏰ Recordatorio: tenés un turno mañana, ${r.first_name}!\n\n` +
-        `💅 ${r.svc_name}\n📅 ${dateStr} a las ${time}\n📍 Mitre 456, Chamical\n\n` +
+        `💅 ${r.svc_name}\n📅 ${dateStr} a las ${time}\n👩‍🎨 ${prof}\n📍 ${addr}\n\n` +
         `Para cancelar, respondé CANCELAR a este mensaje.`;
       sendWhatsApp(phone, msg);
     }
@@ -48,6 +52,11 @@ function registerWhatsAppWebhook(app) {
 
     console.log('[wf] WhatsApp inbound:', from, text.substring(0, 30));
     const db = getDb();
+
+    // Get brand info for messages
+    const brand = db.prepare('SELECT profesional, address FROM provider_settings WHERE provider_id = 5').get() || {};
+    const brandProf = brand.profesional || 'Cecilia Natali Godoy';
+    const brandAddr = brand.address || 'Mitre 456, Chamical';
 
     // Find confirmed appointments (search by phone if possible)
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
@@ -80,14 +89,14 @@ function registerWhatsAppWebhook(app) {
       if (text.includes('CANCELAR')) {
         db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run('cancelled', a.id);
         const phone = (a.phone || '').replace(/\+/g, '').replace(/ /g, '');
-        sendWhatsApp(phone, `Hola ${a.first_name}, tu turno del ${(a.start||'').split(' ')[0]} fue cancelado. Reserva un nuevo turno desde la web.`);
+        sendWhatsApp(phone, `Hola ${a.first_name}, tu turno del ${(a.start||'').split(' ')[0]} fue cancelado.\n\n👩‍🎨 ${brandProf}\n📍 ${brandAddr}\n\nReserva un nuevo turno desde la web.`);
         console.log('[wf] cancelled appointment', a.id);
         return res.json({ processed: true, action: 'cancelled', id: a.id });
       } else {
         // CAMBIAR/REAGENDAR
         db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run('cancelled', a.id);
         const phone = (a.phone || '').replace(/\+/g, '').replace(/ /g, '');
-        sendWhatsApp(phone, `Hola ${a.first_name}, tu turno fue cancelado. Ingresá a nuestra web para reagendar uno nuevo.`);
+        sendWhatsApp(phone, `Hola ${a.first_name}, tu turno fue cancelado. Ingresá a nuestra web para reagendar uno nuevo.\n\n👩‍🎨 ${brandProf}\n📍 ${brandAddr}`);
         console.log('[wf] cancelled for reschedule', a.id);
         return res.json({ processed: true, action: 'cancelled_for_reschedule', id: a.id });
       }
@@ -98,7 +107,7 @@ function registerWhatsAppWebhook(app) {
       ).join('\n');
       const phone = (candidates[0].phone || '').replace(/\+/g, '').replace(/ /g, '');
       const action = text.includes('CANCELAR') ? 'cancelar' : 'cambiar';
-      sendWhatsApp(phone, `Tenés ${candidates.length} turnos activos. ¿Cuál querés ${action}?\n\n${list}\n\nRespondé con el número.`);
+      sendWhatsApp(phone, `Tenés ${candidates.length} turnos activos. ¿Cuál querés ${action}?\n\n${list}\n\n👩‍🎨 ${brandProf}\n📍 ${brandAddr}\n\nRespondé con el número.`);
       console.log('[wf] multiple appointments, sent selection list');
       return res.json({ processed: true, action: 'list_sent', count: candidates.length });
     }

@@ -5,17 +5,21 @@ const { sendWhatsApp } = require('./whatsapp');
 function notifyCustomer(full, type) {
   const c = full.customer || {};
   const s = full.service || {};
+  const p = full.provider || {};
   const phone = (c.phone || '').replace(/\+/g, '').replace(/ /g, '');
   if (!phone || phone.length < 8) return;
   const date = (full.start || '').split(' ')[0];
   const time = ((full.start || '').split(' ')[1] || '').substring(0, 5);
+  const prof = p.profesional || (p.firstName ? p.firstName + ' ' + p.lastName : '');
+  const addr = p.address || 'Mitre 456, Chamical';
   let msg;
   if (type === 'cancel') {
-    msg = `Hola ${c.firstName || ''}, tu turno del ${date} a las ${time} (${s.name || ''}) fue cancelado. Reserva un nuevo turno desde nuestra web.`;
+    msg = `Hola ${c.firstName || ''}, tu turno del ${date} a las ${time} (${s.name || ''}) fue cancelado.\n\n` +
+      `👩‍🎨 ${prof}\n📍 ${addr}\n\nReserva un nuevo turno desde nuestra web.`;
   } else if (type === 'reschedule') {
-    msg = `Hola ${c.firstName || ''}, tu turno fue reagendado. Nueva fecha: ${date} a las ${time} (${s.name || ''}).`;
+    msg = `Hola ${c.firstName || ''}, tu turno fue reagendado.\n\n📅 ${date} a las ${time}\n💅 ${s.name || ''}\n👩‍🎨 ${prof}\n📍 ${addr}`;
   } else {
-    msg = `Hola ${c.firstName || ''} ${c.lastName || ''}!\n\nTu turno esta confirmado:\n${date} a las ${time}\nServicio: ${s.name || ''}`;
+    msg = `Hola ${c.firstName || ''} ${c.lastName || ''}!\n\nTu turno esta confirmado:\n📅 ${date} a las ${time}\n💅 ${s.name || ''}\n👩‍🎨 ${prof}\n📍 ${addr}`;
   }
   sendWhatsApp(phone, msg);
 }
