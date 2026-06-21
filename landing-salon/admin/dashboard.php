@@ -1,4 +1,4 @@
-<?php session_start(); if (!($_SESSION['tetoca_admin'] ?? false)) { header('Location: index.php'); exit; } ?>
+<?php session_start(); if (!($_SESSION['tetoca_admin'] ?? false)) { header('Location: /admin/index.php'); exit; } ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
