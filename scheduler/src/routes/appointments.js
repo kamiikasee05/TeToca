@@ -122,9 +122,10 @@ function register(router) {
         const body = JSON.stringify({ chatId, text: msg });
         const tmpFile = os.tmpdir() + '/wa-' + Date.now() + '.json';
         fs.writeFileSync(tmpFile, body);
-        exec(`curl -s -X POST http://${waOpenwa}:${waPort}/sessions/${waSession}/messages/send-text -H 'Content-Type: application/json' -H 'X-API-Key: ${waApiKey}' --data-binary @${tmpFile}`, { timeout: 15000 }, (err, stdout) => {
+        exec(`curl -s -X POST http://${waOpenwa}:${waPort}/api/sessions/${waSession}/messages/send-text -H 'Content-Type: application/json' -H 'X-API-Key: ${waApiKey}' --data-binary @${tmpFile}`, { timeout: 15000 }, (err, stdout) => {
           fs.unlinkSync(tmpFile);
-          if (!err) console.log('[appt] WA sent:', stdout.substring(0, 80));
+          if (err) console.error('[appt] WA error:', err.message);
+        });
         });
       }
     }
