@@ -4,4 +4,4 @@ RUN useradd -m -u 1000 app && chown -R app:app /var/www/html
 WORKDIR /var/www/html
 USER app
 EXPOSE 8080
-CMD ["php", "-d", "max_execution_time=30", "-d", "max_input_time=60", "-d", "upload_max_filesize=20M", "-d", "post_max_size=25M", "-S", "0.0.0.0:8080", "-t", "/var/www/html"]
+CMD ["php", "-d", "max_execution_time=60", "-d", "max_input_time=120", "-d", "upload_max_filesize=20M", "-d", "post_max_size=100M", "-d", "max_file_uploads=10", "-S", "0.0.0.0:8080", "-t", "/var/www/html"]
