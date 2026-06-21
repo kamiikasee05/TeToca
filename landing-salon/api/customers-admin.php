@@ -10,31 +10,15 @@ if (!($_SESSION['tetoca_admin'] ?? false)) {
 header('Content-Type: application/json');
 $method = $_SERVER['REQUEST_METHOD'];
 
-// DELETE: remove customer (only if no active appointments)
+// DELETE: remove customer (scheduler validates no pending appointments)
 if ($method === 'DELETE') {
     $id = $_GET['id'] ?? null;
     if (!$id) { http_response_code(400); echo json_encode(['error'=>'ID requerido']); exit; }
-    
-    // Check for active appointments
-    $appts = schedulerApiCall('/appointments')['data'] ?? [];
-    $pending = 0;
-    if (is_array($appts)) {
-        foreach ($appts as $a) {
-            if (($a['customerId'] ?? 0) == $id && ($a['status'] ?? '') === 'confirmed') {
-                $pending++;
-            }
-        }
-    }
-    if ($pending > 0) {
-        http_response_code(409);
-        echo json_encode(['error' => "No se puede eliminar: tiene $pending turnos pendientes"]);
-        exit;
-    }
-    
     $r = schedulerApiCall("/customers/$id", 'DELETE');
     if ($r['httpCode'] !== 200) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Error al eliminar cliente']);
+        $msg = $r['data']['message'] ?? 'Error al eliminar cliente';
+        http_response_code($r['httpCode'] === 409 ? 409 : 500);
+        echo json_encode(['error' => $msg]);
         exit;
     }
     echo json_encode(['success' => true]);

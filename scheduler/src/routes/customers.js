@@ -63,6 +63,10 @@ function register(router) {
     const db = getDb();
     const row = db.prepare('SELECT * FROM customers WHERE id = ?').get(+req.params.id);
     if (!row) return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
+    const pending = db.prepare('SELECT COUNT(*) as c FROM appointments WHERE customer_id = ?').get(+req.params.id);
+    if (pending.c > 0) {
+      return res.status(409).json({ success: false, message: `No se puede eliminar: tiene ${pending.c} turnos asociados` });
+    }
     db.prepare('DELETE FROM customers WHERE id = ?').run(+req.params.id);
     res.json(mapCustomer(row));
   });

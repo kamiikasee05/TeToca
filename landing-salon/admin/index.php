@@ -929,11 +929,13 @@ document.getElementById('clientSearch').addEventListener('input', cargarClientes
 
 async function eliminarCliente(id) {
     if (!confirm('¿Eliminar este cliente?')) return;
-    var res = await fetch(CLIENTES_API + '?id=' + id, {method:'DELETE'});
-    var data = await res.json();
-    if (!res.ok) { mostrarToast('Error: ' + (data.error || 'desconocido')); return; }
-    mostrarToast('Cliente eliminado');
-    cargarClientes();
+    try {
+        var res = await fetch(CLIENTES_API + '?id=' + id, {method:'DELETE'});
+        var data = await res.json();
+        if (!res.ok) { mostrarToast(data.error || 'Error al eliminar'); return; }
+        mostrarToast('Cliente eliminado');
+        cargarClientes();
+    } catch(e) { mostrarToast('Error de conexion'); }
 }
 
 document.getElementById('form-servicio').addEventListener('submit', async function(e) {
