@@ -10,6 +10,47 @@ if (!($_SESSION['tetoca_admin'] ?? false)) {
 header('Content-Type: application/json');
 $method = $_SERVER['REQUEST_METHOD'];
 
+$action = $_GET['action'] ?? '';
+
+if ($action === 'days_off') {
+    switch ($method) {
+        case 'GET':
+            $r = schedulerApiCall('/days_off');
+            echo json_encode($r['data'] ?: []);
+            break;
+        case 'POST':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data || !($data['date'] ?? '')) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Fecha requerida']);
+                exit;
+            }
+            $r = schedulerApiCall('/days_off', 'POST', ['date' => $data['date'], 'reason' => $data['reason'] ?? '']);
+            if ($r['httpCode'] === 409) {
+                $msg = $r['data']['message'] ?? 'Hay turnos activos en esta fecha. Reagendalos manualmente.';
+                echo json_encode(['success' => false, 'error' => $msg]);
+                exit;
+            }
+            if ($r['httpCode'] !== 200) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Error al guardar']);
+                exit;
+            }
+            echo json_encode(['success' => true]);
+            break;
+        case 'DELETE':
+            $date = $_GET['date'] ?? '';
+            if (!$date) { http_response_code(400); echo json_encode(['success' => false, 'error' => 'Fecha requerida']); exit; }
+            $r = schedulerApiCall('/days_off/' . $date, 'DELETE');
+            echo json_encode(['success' => true]);
+            break;
+        default:
+            http_response_code(405);
+            echo json_encode(['error' => 'Método no permitido']);
+    }
+    exit;
+}
+
 switch ($method) {
     case 'GET':
         $r = schedulerApiCall('/providers/5');

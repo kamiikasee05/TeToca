@@ -19,8 +19,9 @@ function startCronJobs() {
       JOIN customers c ON a.customer_id = c.id
       JOIN services s ON a.service_id = s.id
       LEFT JOIN provider_settings p ON a.provider_id = p.provider_id
-      WHERE a.status = 'confirmed' AND a.start LIKE ?
-    `).all(dateStr + '%');
+      LEFT JOIN days_off d ON d.provider_id = a.provider_id AND d.date = ?
+      WHERE a.status = 'confirmed' AND a.start LIKE ? AND d.id IS NULL
+    `).all(dateStr, dateStr + '%');
 
     for (const r of rows) {
       const time = (r.start || '').split(' ')[1]?.substring(0, 5) || '';
@@ -42,9 +43,9 @@ function startCronJobs() {
 // WF-3/WF-4: Inbound WhatsApp messages via webhook from OpenWA
 function registerWhatsAppWebhook(app) {
   app.post('/webhook/whatsapp', (req, res) => {
-    const body = req.body || {};
-    const from = (body.from || '').replace(/@.*$/, ''); // strip @lid / @c.us
-    const text = ((body.body || '').toUpperCase());
+    const payload = req.body?.data || req.body || {};
+    const from = (payload.from || '').replace(/@.*$/, '');
+    const text = ((payload.body || '').toUpperCase());
 
     if (!text.includes('CANCELAR') && !text.includes('CAMBIAR') && !text.includes('REAGENDAR')) {
       return res.json({ processed: false });

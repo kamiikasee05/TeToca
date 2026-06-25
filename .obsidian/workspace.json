@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/TuAhoraScheduler.md",
+                "file": "README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TuAhoraScheduler"
+              "title": "README"
             }
           }
         ]
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "docs/TuAhoraScheduler.md",
+                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Esquema de TuAhoraScheduler"
+              "title": "Esquema de README"
             }
           }
         ],
@@ -185,6 +185,8 @@
   },
   "active": "41926e0bd4003b2c",
   "lastOpenFiles": [
+    "roadmap-etapas.md",
+    "docs/TuAhoraScheduler.md",
     "docs/Sesion-2026-06-12.md",
     "docs/Sesion-2026-06-15.md",
     "docs/Sesion-2026-06-18.md",
@@ -221,8 +223,6 @@
     "baileys-service/node_modules/axios/lib/helpers/README.md",
     "baileys-service/node_modules/axios/lib/env/README.md",
     "baileys-service/node_modules/axios/lib/core/README.md",
-    "baileys-service/node_modules/axios/lib/adapters/README.md",
-    "baileys-service/node_modules/agent-base/node_modules/ms/readme.md",
     "baileys-service/node_modules/pino/pretty-demo.png",
     "baileys-service/node_modules/pino/pino-tree.png",
     "baileys-service/node_modules/pino/pino-logo-hire.png",

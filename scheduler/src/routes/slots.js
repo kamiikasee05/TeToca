@@ -16,6 +16,11 @@ function register(router) {
     const dt = new Date(date + 'T12:00:00');
     const dayOfWeek = dayNames[dt.getDay()];
 
+    const dayOff = db.prepare('SELECT reason FROM days_off WHERE provider_id = 5 AND date = ?').get(date);
+    if (dayOff) {
+      return res.json({ slots: [], dayOff: true, reason: dayOff.reason });
+    }
+
     const prov = db.prepare('SELECT * FROM provider_settings WHERE provider_id = 5').get();
     if (!prov) return res.json({ slots: [], error: 'Profesional no configurado' });
 
@@ -73,6 +78,11 @@ function register(router) {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dt = new Date(date + 'T12:00:00');
     const dayOfWeek = dayNames[dt.getDay()];
+
+    const dayOff = db.prepare('SELECT reason FROM days_off WHERE provider_id = ? AND date = ?').get(+providerId, date);
+    if (dayOff) {
+      return res.json({ dayOff: true, reason: dayOff.reason });
+    }
 
     const prov = db.prepare('SELECT * FROM provider_settings WHERE provider_id = ?').get(+providerId);
     if (!prov) return res.json([]);

@@ -1,4 +1,6 @@
-# n8n — Orquestación de Workflows
+# n8n — Orquestación de Workflows (HISTÓRICO)
+
+> **⚠️ n8n no corre en el stack actual.** Desde la migración a bare metal (21 Jun 2026), la confirmación en tiempo real se maneja inline en el scheduler. Cancelación y reagendado se manejan vía webhooks de OpenWA directo al scheduler. Si se necesitan workflows n8n nuevamente, iniciar como contenedor Docker. Ver [[Sesion-2026-06-21]].
 
 Plataforma de automatización self-hosted.
 

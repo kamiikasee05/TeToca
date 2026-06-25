@@ -605,6 +605,10 @@ footer .brand { font-family:'Playfair Display',serif; font-size:18px; color:var(
             return r.json();
         })
         .then(function(data) {
+            if (data && data.dayOff) {
+                container.innerHTML = '<div class="slots-hint">' + (data.reason ? 'Este d\u00EDa no est\u00E1 disponible: ' + data.reason : 'No hay horarios disponibles para esta fecha') + '</div>';
+                return;
+            }
             if (!Array.isArray(data) || data.length === 0) {
                 container.innerHTML = '<div class="slots-hint">No hay horarios disponibles para esta fecha</div>';
                 return;

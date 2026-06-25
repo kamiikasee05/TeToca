@@ -1,8 +1,8 @@
 # Brief para OpenCode
 
-Ver archivo original: [[OPENCODE-BRIEF.md]]
-
 Documento que describe las tareas del MVP, la estructura del proyecto, y las APIs de Easy!Appointments para que OpenCode pueda trabajar autónomamente.
+
+> **Nota:** Este brief describe el stack Docker Compose + n8n original. Desde la [[Sesion-2026-06-21|migración a bare metal]], n8n no corre y la infraestructura es diferente.
 
 ## Tareas cubiertas
 

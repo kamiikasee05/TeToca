@@ -1,4 +1,6 @@
-# WF-4: Reagendado por WhatsApp
+# WF-4: Reagendado por WhatsApp — HISTÓRICO
+
+> ⚠️ n8n no corre en el stack actual (bare metal). El reagendado ahora se maneja vía webhook OpenWA → scheduler directamente. Este documento describe la implementación original en n8n.
 
 **Estado:** ✅ End-to-end confirmado (14 Junio 2026)
 

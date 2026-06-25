@@ -1,5 +1,45 @@
 # Estado del Proyecto
 
+## 21 Junio 2026 — Migración a Bare Metal 🖥️
+
+**Hito:** Stack migrado de Docker Compose a bare metal en Ubuntu Server (192.168.18.20). OpenWA es el único servicio en Docker. n8n reemplazado por inline WhatsApp en scheduler.
+
+**Fecha:** 21 Junio 2026
+**Fase:** ✅ Etapa 1-4. ✅ Etapa 5 (QA). ⏳ Etapa 6 — Infraestructura productiva (solo si hay cliente que paga).
+
+### Stack actual
+
+| Servicio | Tipo | Puerto | Estado |
+|---|---|---|---|
+| Landing (Nginx + SPA) | Bare metal | :80 | ✅ |
+| Admin panel (PHP-FPM) | Bare metal | :80 vía nginx | ✅ |
+| Scheduler API (Node + SQLite) | pm2 (fork) | :3000 | ✅ |
+| OpenWA (WhatsApp) | Docker (único) | :2785 | ✅ connected |
+| Redis 7 | systemd | interno | ✅ |
+| n8n | — | — | ❌ No corre |
+
+### Cambios clave
+- **Docker removido** para todo excepto OpenWA (requiere Chromium isolation). Servicios ahora corren en bare metal vía nginx + PHP-FPM + pm2 + systemd.
+- **n8n no corre.** La confirmación en tiempo real se maneja inline en el scheduler (`appointments.js:120-153`). Si se necesitan flujos complejos nuevamente, iniciar n8n como contenedor Docker.
+- **Mailpit eliminado** del stack (no necesario en producción).
+
+### Fixes aplicados
+| Fix | Problema | Solución |
+|---|---|---|
+| pm2 env cache | `--update-env` lee DUMP, no ecosystem config | `pm2 delete X; pm2 start ecosystem --only X; pm2 save` |
+| nginx rate limiting | 503 por burst=5 nodelay | burst=30, removido nodelay |
+| OpenWA webhook payload | `body.from` undefined por payload anidado | `req.body?.data || req.body || {}` |
+| Hostnames | `tetoca_openwa` no resuelve | `127.0.0.1` + `--add-host scheduler:172.17.0.1` |
+| Address sync | Marca tab no sincronizaba con scheduler | curl `PUT /providers/5` desde save-branding.php |
+| OpenWA SSRF | Bloqueaba webhooks a IP privada | `WEBHOOK_SSRF_PROTECT=false` |
+
+### Verificación E2E
+✅ Cliente creado → turno reservado → "CANCELAR" vía webhook → turno cancelado en DB
+
+Ver [[Sesion-2026-06-21]] para detalle completo.
+
+---
+
 ## 18 Junio 2026 — Security hardening 🛡️
 
 **Hito:** Auditoría de seguridad completa (2ª pasada). 11 hallazgos críticos resueltos. Stack hardened para producción. Commits `4afd018` + `edb1660`.
@@ -41,12 +81,14 @@ Ver [[SecurityAudit-Report]] para detalle completo.
 
 ## 18 Junio 2026 — Deploy fixes (WSL2/Windows) 🛠️
 
+> ⚠️ **HISTÓRICO — Stack Docker Compose.** Ver stack actual en [[EstadoProyecto#21 Junio 2026 — Migración a Bare Metal|sección superior]].
+
 **Hito:** Stack desplegado y operativo en entorno Windows/WSL2. Corregidos bugs de port binding, CRLF, API routing, env vars faltantes, y límites de upload. Commit `bdcae27`.
 
 **Fecha:** 18 Junio 2026
 **Fase:** ✅ Etapa 1-4. ⏳ Etapa 5 — Infraestructura productiva (solo si hay cliente que paga).
 
-### Stack actual
+### Stack (18 Jun — Docker Compose, histórico)
 | Service | Port | Status |
 |---|---|---|
 | Landing (Nginx + SPA) | :80 | ✅ — nginx proxies `/api/v1` → scheduler, `/admin` + `/api` → admin PHP |
@@ -90,8 +132,8 @@ Ver [[Sesion-2026-06-18]] para detalle completo de los fixes.
 
 ## Sesiones
 
+- [[Sesion-2026-06-21]] — Migración a bare metal: Ubuntu Server, pm2, Docker solo para OpenWA, n8n reemplazado por inline WhatsApp
 - [[Sesion-2026-06-18]] — Deploy fixes + Security hardening: WSL2, CRLF, nginx routing, env vars, admin + 11 críticos resueltos (commits `bdcae27`, `4afd018`, `edb1660`)
-- [[Sesion-2026-06-16]] — Landing migration PHP→Nginx static, OpenWA session recovery, WhatsApp proxy vía scheduler, 7 workflows end-to-end, WF-3 v3 con LID breakthrough, dashboard completo, auditoría de seguridad final
 - [[Sesion-2026-06-15]] — n8n upgrade 1.92.0→2.26.3, EA+MySQL retirados, migración completada
 - [[Sesion-2026-06-14]] — WF3/WF4 end-to-end debugging, PHP cancel relay, Docker Desktop estabilidad
 - [[Sesion-2026-06-13]] — Landing page, dashboard merge, estabilización de workflows, OpenWA webhooks
@@ -99,24 +141,27 @@ Ver [[Sesion-2026-06-18]] para detalle completo de los fixes.
 
 ## Barras de progreso
 
-- Infraestructura base: 100%
+- Infraestructura base: 100% (migrado a bare metal)
 - Etapa 1 — Visual: 100%
 - Etapa 2 — Config: 100%
-- Etapa 3 — WhatsApp: 100%
+- Etapa 3 — WhatsApp: 100% (inline en scheduler)
 - Etapa 4 — Negocio: 100%
-- Etapa 5 — Infra. prod: 0%
+- Etapa 5 — QA & Testing: 100% (E2E verificado en bare metal)
+- Etapa 6 — Infra. productiva: 0% (solo si hay cliente que paga)
 
-## Estado de Workflows (7/7)
+## Estado de Workflows
 
-| Workflow | Tipo | Descripción | Estado |
+> **Nota:** n8n no corre en el stack actual. La confirmación en tiempo real (WF-RT) se maneja inline en el scheduler. Cancelación (WF-3), reagendado (WF-4) y notificaciones (WF-5, WF-6) se manejan vía webhooks de OpenWA directo al scheduler. Los cron jobs (WF-1, WF-2) están pendientes de migrar a cron del sistema.
+
+| Workflow | Tipo | Estado | Nota |
 |---|---|---|---|
-| WF-RT | Outbound | Confirmación en tiempo real vía webhook `appointment-created` | ✅ |
-| WF-1 | Outbound | Confirmación 24h antes (cron) | ✅ |
-| WF-2 | Outbound | Recordatorio diario 21:00 ART (cron) | ✅ Verificado |
-| WF-3 | Inbound | "CANCELAR" vía WhatsApp → cancela turno | ✅ v3 (Code-based router) |
-| WF-4 | Inbound | "CAMBIAR/REAGENDAR" vía WhatsApp → cancela + link reagendado | ✅ |
-| WF-5 | Outbound | Notificación cancelación vía webhook `appointment-cancelled` | ✅ |
-| WF-6 | Outbound | Notificación reagendado vía webhook `appointment-rescheduled` | ✅ |
+| WF-RT | Confirmación inline | ✅ | En scheduler (`appointments.js:120-153`) |
+| WF-1 | Confirmación 24h (cron) | ⏳ Pendiente migrar | Antes en n8n, requiere cron del sistema |
+| WF-2 | Recordatorio 21:00 ART | ⏳ Pendiente migrar | Antes en n8n, requiere cron del sistema |
+| WF-3 | Cancelación inbound | ✅ | Webhook OpenWA → scheduler |
+| WF-4 | Reagendado inbound | ✅ | Webhook OpenWA → scheduler |
+| WF-5 | Notif. cancelación | ✅ | Webhook OpenWA → scheduler |
+| WF-6 | Notif. reagendado | ✅ | Webhook OpenWA → scheduler |
 
 ## Logros clave — 16 Junio 2026
 

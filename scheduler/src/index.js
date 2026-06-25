@@ -7,6 +7,7 @@ const customers = require('./routes/customers');
 const services = require('./routes/services');
 const providers = require('./routes/providers');
 const slots = require('./routes/slots');
+const daysOff = require('./routes/days_off');
 const whatsapp = require('./routes/whatsapp');
 const workflows = require('./workflows');
 
@@ -30,6 +31,7 @@ customers.register(api);
 services.register(api);
 providers.register(api);
 slots.register(api);
+daysOff.register(api);
 whatsapp.register(api);
 
 app.get('/health', (req, res) => {

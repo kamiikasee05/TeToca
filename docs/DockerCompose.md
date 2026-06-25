@@ -1,4 +1,6 @@
-# Docker Compose — Stack Completo
+# Docker Compose — Stack Completo (HISTÓRICO)
+
+> **⚠️ HISTÓRICO — Stack migrado a bare metal (21 Jun 2026).** Solo OpenWA corre en Docker actualmente. Ver [[Sesion-2026-06-21]] y [[Arquitectura]] para el stack actual.
 
 Archivo principal: `E:\TUAHORA\docker-compose.yml`
 Override productivo: `E:\TUAHORA\docker-compose.prod.yml`

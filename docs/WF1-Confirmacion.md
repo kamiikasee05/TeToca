@@ -1,6 +1,8 @@
-# WF-1: Confirmación Inmediata de Turno
+# WF-1: Confirmación Inmediata de Turno — HISTÓRICO
 
-**Estado:** ✅ Funcionando end-to-end
+> ⚠️ n8n no corre en el stack actual (bare metal). WF-1 (confirmación 24h) está pendiente de migrar a cron del sistema.
+
+**Estado:** ⏳ Pendiente migrar a cron del sistema
 
 ## WF-RT: Confirmación en tiempo real (primario)
 

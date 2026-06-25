@@ -11,32 +11,34 @@ Ver archivo original: [[roadmap-etapas.md]]
 5. **QA & Testing** — 🔨 En progreso (21 Jun 2026)
 6. **Infraestructura productiva** — ⏳ Pendiente (solo si hay cliente que paga)
 
-> **21 Jun 2026 (VM deploy + hardening):** Despliegue completo en Ubuntu Server 24.04 (VM). Stack funcional con 4 workflows n8n importados y publicados. Se detectó que el flujo de notificaciones en tiempo real (scheduler → n8n webhook → WhatsApp) es frágil: múltiples puntos de falla (env vars bloqueadas, headers mal configurados, cambios no publicados, formato de body inconsistente). Se agrega Etapa 5.5 QA para robustecer el deploy.
+> **21 Jun 2026 (Bare Metal Migration):** Stack migrado de Docker Compose a bare metal (Ubuntu Server 24.04). n8n reemplazado por inline WhatsApp en scheduler. Docker eliminado para todo excepto OpenWA. Ver [[Sesion-2026-06-21]].
 >
-> **Decisión arquitectónica:** La confirmación en tiempo real (WF-RT) se moverá del webhook n8n al scheduler directamente para eliminar la cadena de dependencias. Los flujos complejos (cancelación, reagendado, recordatorios) permanecen en n8n.
+> **Decisión arquitectónica:** La confirmación en tiempo real (WF-RT) se movió del webhook n8n al scheduler directamente (inline). Cancelación, reagendado y notificaciones se manejan vía webhooks de OpenWA directo al scheduler. n8n ya no corre.
 
 ## Estado por etapa
 
 | Etapa | Estado | Notas |
-|---|---|---|
+|---|---|---|---|
 | Etapa 1 — Visual/Landing | ✅ Completada | Landing SPA con booking de 3 pasos, mobile-first, colores desde config.json |
 | Etapa 2 — Config | ✅ Completada | Dashboard admin: branding (logo, gallery, colores), services CRUD, gestión de turnos |
-| Etapa 3 — WhatsApp | ✅ MVP COMPLETADO | 7/7 workflows diseñados. 4/7 operativos post-deploy VM. |
+| Etapa 3 — WhatsApp | ✅ COMPLETADA | Inline en scheduler. Cancelación, reagendado y notificaciones vía webhooks OpenWA |
 | Etapa 4 — Negocio | ✅ Completada | Contrato, guías, propuesta comercial redactados |
-| Etapa 5 — QA & Testing | 🔨 En progreso | Checklist de validación post-deploy. End-to-end test automatizado. |
+| Etapa 5 — QA & Testing | ✅ Completada | E2E verificado en bare metal (creación → cancelación vía WhatsApp) |
 | Etapa 6 — Infraestructura productiva | ⏳ Pendiente | Solo si hay cliente que paga. |
 
-## 7 Workflows n8n — Estado final
+## Workflows — Estado (post bare metal)
 
-| Workflow | Tipo | Descripción | Estado |
+> **Nota:** n8n no corre. La funcionalidad se migró a inline en scheduler + webhooks OpenWA directos.
+
+| Workflow | Tipo | Estado | Nota |
 |---|---|---|---|
-| WF-RT | Outbound | Confirmación en tiempo real vía webhook `appointment-created` | ✅ |
-| WF-1 | Outbound | Confirmación 24h antes (cron) | ✅ |
-| WF-2 | Outbound | Recordatorio diario 21:00 ART (cron) | ✅ Verificado |
-| WF-3 | Inbound | "CANCELAR" vía WhatsApp → cancela turno | ✅ v3 |
-| WF-4 | Inbound | "CAMBIAR/REAGENDAR" vía WhatsApp → cancela + link reagendado | ✅ |
-| WF-5 | Outbound | Notificación cancelación vía webhook `appointment-cancelled` | ✅ |
-| WF-6 | Outbound | Notificación reagendado vía webhook `appointment-rescheduled` | ✅ |
+| WF-RT | Confirmación inline | ✅ | En scheduler (`appointments.js:120-153`) |
+| WF-1 | Confirmación 24h (cron) | ⏳ Pendiente | Migrar a cron del sistema |
+| WF-2 | Recordatorio 21:00 ART | ⏳ Pendiente | Migrar a cron del sistema |
+| WF-3 | Cancelación inbound | ✅ | Webhook OpenWA → scheduler |
+| WF-4 | Reagendado inbound | ✅ | Webhook OpenWA → scheduler |
+| WF-5 | Notif. cancelación | ✅ | Webhook OpenWA → scheduler |
+| WF-6 | Notif. reagendado | ✅ | Webhook OpenWA → scheduler |
 
 ## Logros finales (16 Jun 2026)
 
@@ -63,13 +65,14 @@ Ver archivo original: [[roadmap-etapas.md]]
 - Credentials: `admin` / `admin2024`
 
 ### Seguridad
-- Auditoría completa: 🟡 MEDIUM RISK — 3 críticos, 4 sospechosos, 4 observaciones
+- Auditoría completa (18 Jun): 🟢 HARDENED FOR PRODUCTION — 11 críticos resueltos
 - Ver [[SecurityAudit-Report]]
 
 ## Próximo
 
-- Etapa 5 — Infraestructura productiva (solo si hay cliente que paga)
-- Resolver 3 críticos de auditoría antes del deploy
+- **`days_off`**: feature para bloquear fechas específicas (feriados, vacaciones)
+- **Migrar WF-1 / WF-2**: recordatorios y confirmaciones 24h desde cron del sistema (reemplazar n8n cron)
+- Etapa 6 — Infraestructura productiva (solo si hay cliente que paga)
 
 ## Relacionado
 
@@ -77,3 +80,4 @@ Ver archivo original: [[roadmap-etapas.md]]
 - [[EstadoProyecto]]
 - [[Arquitectura]]
 - [[SecurityAudit-Report]]
+- [[Sesion-2026-06-21]]

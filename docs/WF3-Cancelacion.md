@@ -1,4 +1,6 @@
-# WF-3: Cancelación por WhatsApp
+# WF-3: Cancelación por WhatsApp — HISTÓRICO
+
+> ⚠️ n8n no corre en el stack actual (bare metal). La cancelación inbound ahora se maneja vía webhook OpenWA → scheduler directamente. Este documento describe la implementación original en n8n (código y lógica funcionalmente equivalentes).
 
 **Estado:** ⚠️ Flujo inbound (CANCELAR) funciona. Pendiente: notificación outbound por cancelación del sistema.
 

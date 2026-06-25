@@ -1,6 +1,6 @@
 const http = require('http');
 
-const OPENWA_HOST = process.env.OPENWA_HOST || 'tetoca_openwa';
+const OPENWA_HOST = process.env.OPENWA_HOST || '127.0.0.1';
 const OPENWA_PORT = process.env.OPENWA_PORT || 2785;
 const OPENWA_API_KEY = process.env.OPENWA_API_KEY;
 const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID;
@@ -36,9 +36,12 @@ function register(router) {
     fs.writeFileSync(tmpFile, JSON.stringify({ chatId, text: message }));
     const cmd = `curl -s -X POST http://${OPENWA_HOST}:${OPENWA_PORT}/api/sessions/${OPENWA_SESSION_ID}/messages/send-text -H 'Content-Type: application/json' -H 'X-API-Key: ${OPENWA_API_KEY}' --data-binary @${tmpFile}`;
 
-    exec(cmd, { timeout: 15000 }, (err, stdout) => {
+    exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
       fs.unlinkSync(tmpFile);
-      if (err) return res.status(502).json({ success: false, message: 'Error al enviar mensaje' });
+      if (err) {
+        console.error('[whatsapp] exec error:', err.message, 'code:', err.code, 'stderr:', stderr);
+        return res.status(502).json({ success: false, message: 'Error al enviar mensaje' });
+      }
       try {
         const data = JSON.parse(stdout);
         const success = !!data.messageId;

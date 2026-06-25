@@ -109,6 +109,23 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action
         if (!saveConfig($config)) {
             jsonResponse(['error' => 'No se puede guardar: permisos de escritura en config.json'], 500);
         }
+        // Sync address & profesional to scheduler DB so WhatsApp messages show them
+        $schedulerUrl = getenv('SCHEDULER_URL') ?: 'http://127.0.0.1:3000/api/v1';
+        $apiKey = getenv('SCHEDULER_API_KEY') ?: '';
+        $syncPayload = json_encode([
+            'address' => $brand['address'],
+            'profesional' => $brand['profesional'],
+        ]);
+        $ch = curl_init($schedulerUrl . '/providers/5');
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => 'PUT',
+            CURLOPT_POSTFIELDS => $syncPayload,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-API-Key: ' . $apiKey],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 5,
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
         jsonResponse(['success' => true, 'brand' => $brand]);
     }
 
@@ -554,6 +571,22 @@ textarea { resize:vertical; min-height:60px; }
             </div>
         </form>
     </div>
+    <div class="card" style="margin-top:24px;">
+        <h2>Días no laborables</h2>
+        <p style="color:#999;font-size:13px;margin-bottom:16px;">Bloqueá fechas específicas (feriados, vacaciones). No se pueden bloquear días que tengan turnos activos.</p>
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <input type="date" id="doff-date" class="form-input" style="flex:1;min-width:160px;">
+            <input type="text" id="doff-reason" class="form-input" placeholder="Motivo (ej: Feriado nacional)" style="flex:2;min-width:200px;">
+            <button class="btn btn-primary" id="btn-add-doff">Agregar</button>
+        </div>
+        <div id="doff-error" style="color:#e74c3c;font-size:13px;margin-bottom:8px;display:none;"></div>
+        <div id="doff-loading" style="text-align:center;padding:16px;color:#999;">Cargando...</div>
+        <table id="tabla-doff" class="hidden">
+            <thead><tr><th>Fecha</th><th>Motivo</th><th></th></tr></thead>
+            <tbody id="tbody-doff"></tbody>
+        </table>
+        <div id="doff-empty" class="hidden" style="text-align:center;padding:16px;color:#999;">No hay días no laborables cargados</div>
+    </div>
 </div>
 
 <!-- TAB: Calendario -->
@@ -807,6 +840,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         if (panel) panel.classList.add('active');
         document.getElementById('header-title').textContent = 'TeToca · ' + this.textContent;
         if (tab === 'dashboard') cargarDashboard();
+        if (tab === 'horarios') { cargarHorarios(); cargarDiasOff(); }
         if (tab === 'calendario') renderCalendario();
         if (tab === 'turnos') renderTurnos();
         if (tab === 'clientes') cargarClientes();
@@ -1034,6 +1068,52 @@ document.getElementById('form-horarios').addEventListener('submit', async functi
         mostrarToast('Horarios guardados');
     } catch(e) { mostrarToast('Error de conexión'); }
     finally { btn.textContent = 'Guardar horarios'; btn.disabled = false; }
+});
+
+// ===== DÍAS NO LABORABLES =====
+const DOFF_API = '../api/horarios-admin.php?action=days_off';
+
+async function cargarDiasOff() {
+    var res = await fetch(DOFF_API); var data = await res.json();
+    document.getElementById('doff-loading').classList.add('hidden');
+    if (!data.length) { document.getElementById('doff-empty').classList.remove('hidden'); document.getElementById('tabla-doff').classList.add('hidden'); return; }
+    document.getElementById('tabla-doff').classList.remove('hidden'); document.getElementById('doff-empty').classList.add('hidden');
+    var tbody = document.getElementById('tbody-doff'); tbody.innerHTML = '';
+    data.forEach(function(d) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + d.date + '</td><td>' + (d.reason||'') + '</td>' +
+            '<td><button class="btn btn-ghost btn-xs" onclick="eliminarDiaOff(\'' + d.date + '\')">✕</button></td>';
+        tbody.appendChild(tr);
+    });
+}
+
+async function eliminarDiaOff(date) {
+    if (!confirm('¿Desbloquear el ' + date + '?')) return;
+    var res = await fetch(DOFF_API + '&date=' + date, {method:'DELETE'});
+    var data = await res.json();
+    if (!data.success) { mostrarToast('Error: '+(data.error||'')); return; }
+    mostrarToast('Día desbloqueado'); cargarDiasOff();
+}
+
+document.getElementById('btn-add-doff').addEventListener('click', async function() {
+    var date = document.getElementById('doff-date').value;
+    var reason = document.getElementById('doff-reason').value.trim();
+    if (!date) { mostrarToast('Seleccioná una fecha'); return; }
+    var errDiv = document.getElementById('doff-error');
+    errDiv.style.display = 'none';
+    var btn = this; btn.textContent = 'Guardando...'; btn.disabled = true;
+    try {
+        var res = await fetch(DOFF_API, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({date:date, reason:reason, csrf_token:CSRF_TOKEN})});
+        var data = await res.json();
+        if (!data.success) {
+            if (data.error) { errDiv.textContent = data.error; errDiv.style.display = 'block'; }
+            else { mostrarToast('Error: '+(data.error||'')); }
+            return;
+        }
+        mostrarToast('Día bloqueado'); document.getElementById('doff-date').value = ''; document.getElementById('doff-reason').value = '';
+        cargarDiasOff();
+    } catch(e) { mostrarToast('Error de conexión'); }
+    finally { btn.textContent = 'Agregar'; btn.disabled = false; }
 });
 
 // ===== CALENDARIO =====

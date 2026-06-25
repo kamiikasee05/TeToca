@@ -1,6 +1,8 @@
-# WF-2: Recordatorio 24 Horas Antes
+# WF-2: Recordatorio 24 Horas Antes — HISTÓRICO
 
-**Estado:** ✅ Funcionando
+> ⚠️ n8n no corre en el stack actual (bare metal). WF-2 (recordatorio diario) está pendiente de migrar a cron del sistema.
+
+**Estado:** ⏳ Pendiente migrar a cron del sistema
 
 **Trigger:** Schedule — cron `0 21 * * *` (18:00 ART)
 

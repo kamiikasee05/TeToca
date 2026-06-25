@@ -2,6 +2,21 @@
 
 This project uses Obsidian for documentation. The vault is at `E:\TUAHORA`.
 
+## Current State (2026-06-21 — Bare Metal)
+
+Stack migrado de Docker Compose a bare metal en Ubuntu Server (192.168.18.20). Solo OpenWA corre en Docker.
+
+| Service | Type | Port | Status |
+|---|---|---|---|
+| Landing (SPA, nginx) | Bare metal | :80 | ✅ |
+| Admin panel (PHP-FPM) | Bare metal | :80 vía nginx | ✅ |
+| Scheduler API (Node) | pm2 (fork mode) | :3000 | ✅ |
+| OpenWA (WhatsApp) | Docker | :2785 | ✅ connected |
+| Redis | systemd | internal | ✅ |
+| n8n | — | — | ❌ No corre. Inline WhatsApp en scheduler |
+
+Ver [[Sesion-2026-06-21]] para detalle completo de la migración.
+
 ## Rules
 
 - All significant changes, architectural decisions, and progress must be documented in `docs/` as Obsidian markdown notes.
@@ -190,3 +205,53 @@ Auditoría de seguridad completa (2ª pasada). **11 hallazgos críticos resuelto
 - Redis sin password — red interna, no expuesto
 
 Ver [[SecurityAudit-Report]] para el reporte completo.
+
+## Bare Metal Migration � 2026-06-21
+
+### Session Summary
+Migrated TeToca booking system from Docker Compose to bare metal on Ubuntu Server (192.168.18.20).
+
+### What Changed
+| Before | After |
+|---|---|
+| All services in Docker (nginx, node, PHP, Redis, OpenWA, n8n) | Docker removed for everything except OpenWA (Chromium isolation) |
+| Docker Compose orchestration | pm2 (Node) + systemd (Redis) + nginx/PHP-FPM (bare metal) |
+| n8n handling real-time confirmations | Inline WhatsApp in scheduler (appointments.js:120-153) |
+| Docker volumes | Direct filesystem paths |
+
+### Current Stack
+| Service | Type | Port | Status |
+|---|---|---|---|---|
+| Landing (SPA, nginx) | Bare metal | :80 | ✅ |
+| Admin panel (PHP-FPM) | Bare metal | :80 vía nginx | ✅ |
+| Scheduler API (Node) | pm2 (fork mode) | :3000 | ✅ |
+| OpenWA (WhatsApp) | Docker | :2785 | ✅ connected |
+| Redis | systemd | internal | ✅ |
+
+### Key Fixes
+- **OpenWA API key auth**: `x-api-key` header must be lowercase (Node.js `http.request` headers are case-sensitive). Python `urllib` headers work when correct case is used.
+- **pm2 env cache**: `pm2 restart --update-env` uses the DUMP file, not the ecosystem config. Fix: `pm2 delete [app]; pm2 start ecosystem.config.js --only [app]; pm2 save`.
+- **OpenWA SSRF Protection**: `WEBHOOK_SSRF_PROTECT=false` required because OpenWA?scheduler uses private IP (172.17.0.1).
+- **Host resolution for OpenWA?scheduler**: `--add-host scheduler:172.17.0.1` on Docker container so OpenWA webhooks reach host services.
+- **OpenWA webhook event**: `message.received`, not `message` or `message.create`.
+
+### Known Issues
+- **Quoting chain**: PowerShell ? sshpass ? SSH ? bash strips quotes. All remote commands must use base64-encoded Python scripts to avoid corruption.
+- **n8n not running**: Real-time confirmations are handled inline in scheduler. If n8n workflows are needed again, start as Docker container.
+- **Docker Compose files still present** in project root (obsolete but harmless).
+
+### File Locations
+- Ecosystem config: `/home/kamiikasee/tetoca/ecosystem.config.js`
+- nginx config: `/etc/nginx/sites-available/tuahora`
+- PHP-FPM env: `/etc/php/8.5/fpm/pool.d/www.conf`
+- Admin password: auto_prepend_file `/home/kamiikasee/tetoca/landing-salon/env-setup.php`
+- Scheduler DB: `/home/kamiikasee/tetoca/scheduler/data/scheduler.db`
+- OpenWA data: `/home/kamiikasee/tetoca/data/openwa/`
+- pm2 logs: `/var/log/tuahora/{scheduler,openwa}-{error,out}.log`
+
+### Credentials
+- Server: `192.168.18.20` user `kamiikasee`
+- Admin panel: bcrypt hash in env-setup.php
+- API keys: ecosystem.config.js (SCHEDULER, OPENWA)
+- OpenWA session: `e08f17fa-ddc1-4a44-a977-9203a0fc8118` (name: tuahora)
+- Webhook: session tuahora ? `http://172.17.0.1:3000/webhook/whatsapp`, event `message.received`

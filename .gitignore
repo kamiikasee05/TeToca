@@ -46,3 +46,6 @@ openwa/node_modules/
 
 # OpenCode plugins (third-party clones)
 .opencode/ponytail/
+
+# OpenCode config local (API keys, tokens)
+opencode.json

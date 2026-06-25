@@ -97,6 +97,11 @@ function register(router) {
     if (!start || !end || !serviceId || !customerId) {
       return res.status(400).json({ success: false, message: 'start, end, serviceId y customerId requeridos' });
     }
+    const apptDate = start.split(' ')[0];
+    const dayOff = db.prepare('SELECT 1 FROM days_off WHERE provider_id = ? AND date = ?').get(providerId || 5, apptDate);
+    if (dayOff) {
+      return res.status(409).json({ success: false, message: 'Esta fecha no está disponible (día no laborable)' });
+    }
     const hash = Math.random().toString(36).substring(2, 10);
     const result = db.prepare(`
       INSERT INTO appointments (start, end, service_id, customer_id, provider_id, notes, hash)
@@ -134,7 +139,7 @@ function register(router) {
         `📍 ${prov.address || 'Mitre 456, Chamical'}\n\n` +
         `Para cancelar, respondé CANCELAR a este mensaje.`;
       // Direct OpenWA call (avoid proxy loopback + auth middleware)
-      const waOpenwa = process.env.OPENWA_HOST || 'tetoca_openwa';
+      const waOpenwa = process.env.OPENWA_HOST || '127.0.0.1';
       const waPort = process.env.OPENWA_PORT || 2785;
       const waSession = process.env.OPENWA_SESSION_ID;
       const waApiKey = process.env.OPENWA_API_KEY;
@@ -166,6 +171,13 @@ function register(router) {
     const existing = db.prepare('SELECT * FROM appointments WHERE id = ?').get(+req.params.id);
     if (!existing) return res.status(404).json({ success: false, message: 'Turno no encontrado' });
     const d = req.body || {};
+    if (d.start && d.start !== existing.start) {
+      const newDate = d.start.split(' ')[0];
+      const dayOff = db.prepare('SELECT 1 FROM days_off WHERE provider_id = ? AND date = ?').get(d.providerId || existing.provider_id, newDate);
+      if (dayOff) {
+        return res.status(409).json({ success: false, message: 'La nueva fecha no está disponible (día no laborable)' });
+      }
+    }
     db.prepare(`
       UPDATE appointments SET start=?, end=?, service_id=?, customer_id=?, provider_id=?, status=?, notes=?
       WHERE id=?
